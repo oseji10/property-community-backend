@@ -11,33 +11,209 @@ use App\Models\AcademicSession;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
+use App\Models\PropertyType;
 use PDF;
+use Carbon\Carbon;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+
 
 class PropertyController extends Controller
 {
     public function index()
     {
         return Property::where('isAvailable', true)
-            ->with('images','owner')
+            ->with('images','owner', 'currency', 'property_type')
             ->latest()
             ->paginate(10);
     }
 
-    public function store(Request $request)
+    public function propertyType()
     {
+        $property_types = PropertyType::all();
+        return response()->json($property_types);
+    }
+
+public function store(Request $request)
+{
+    $data = $request->validate([
+        'propertyTitle'       => 'required|string|max:255',
+        'propertyDescription' => 'required|string',
+        'propertyTypeId'      => 'required|integer|exists:property_types,typeId',
+        'address'             => 'required|string',
+        'city'                => 'nullable|string',
+        'state'               => 'nullable|string',
+        'price'               => 'required|numeric|min:0',
+        'listingType'         => 'required|in:rent,sale',
+        'bedrooms'            => 'nullable|integer|min:0',
+        'bathrooms'           => 'nullable|integer|min:0',
+        'garage'              => 'nullable|string',
+        'longitude'           => 'nullable|string',
+        'latitude'            => 'nullable|string',
+        'otherFeatures'       => 'nullable|string',
+        'amenities'           => 'nullable|string',
+        'size'                => 'nullable|string',
+        'currency'            => 'nullable|integer|exists:currencies,currencyId',
+        // 'images'              => 'nullable',
+        // 'images.*'            => 'image|mimes:jpeg,png,jpg,gif,svg,avif|max:5120',
+        'images'   => 'nullable|array',
+    'images.*' => 'file|mimes:jpeg,png,jpg,gif,svg,avif|max:5120',
+    ]);
+
+    $data['addedBy'] = auth()->id();
+    $data['slug']    = \Str::slug($data['propertyTitle']) . '-' . uniqid();
+
+    $property = Property::create($data);
+
+    // Handle images
+    $files = $request->file('images');
+
+    // Normalize to array (handles single file or multiple)
+    $images = is_array($files) ? $files : ($files ? [$files] : []);
+
+    $savedImages = []; // for debugging/response
+
+    foreach ($images as $image) {
+        if ($image && $image->isValid()) {
+            $path = $image->store('property_images', 'public');
+
+            // ← This is the important fix
+            $fullUrl = Storage::url($path);           // returns /storage/...
+            // or: '/storage/' . $path;               // same result in most cases
+
+            $property->images()->create([
+                'imageUrl' => $path,
+            ]);
+
+            $savedImages[] = $path; // collect for response/debug
+        }
+    }
+
+    // Optional: reload with images for response
+    $property->load('images');
+
+    return response()->json([
+        'message'  => 'Property created successfully',
+        'property' => $property,
+        'saved_image_urls' => $savedImages, // ← add this temporarily to verify
+    ], 201);
+}
+
+    public function myProperties()
+    {
+        $user = auth()->user();
+        $properties = Property::with('images', 'currency')->get();
+        // $properties = Property::where('addedBy', $user->id)->with('images','currency')->latest()->paginate(10);
+        return response()->json($properties);
+    }
+
+
+    public function show(Request $request, $slug){
+        $property = Property::where('slug', $slug)->with('images','currency','property_type')->first();
+        if (!$property) {
+            return response()->json(['message' => 'Property not found'], 404);
+        }
+        return response()->json($property);
+    }
+
+
+    public function update(Request $request, $slug)
+    {
+        $property = Property::where('slug', $slug)->first();
+        if (!$property) {
+            return response()->json(['message' => 'Property not found'], 404);
+        }
+
+        if ($property->addedBy !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $data = $request->validate([
-            'propertyTitle' => 'required',
-            'propertyDescription' => 'required',
-            'propertyType' => 'required',
-            'address' => 'required',
-            'city' => 'nullable',
-            'state' => 'nullable',
-            'price' => 'required|numeric',
-            'listingType' => 'required|in:rent,sale',
+            'propertyTitle'       => 'sometimes|required|string|max:255',
+            'propertyDescription' => 'sometimes|required|string',
+            'propertyTypeId'      => 'sometimes|required|integer|exists:property_types,typeId',
+            'address'             => 'sometimes|required|string',
+            'city'                => 'nullable|string',
+            'state'               => 'nullable|string',
+            'price'               => 'sometimes|required|numeric|min:0',
+            'listingType'         => 'sometimes|required|in:rent,sale',
+            'bedrooms'            => 'nullable|integer|min:0',
+            'bathrooms'           => 'nullable|integer|min:0',
+            'garage'              => 'nullable|string',
+            'longitude'           => 'nullable|string',
+            'latitude'            => 'nullable|string',
+            'otherFeatures'       => 'nullable|string',
+            'amenities'           => 'nullable|string',
+            'size'                => 'nullable|string',
+            'currency'            => 'nullable|integer|exists:currencies,currencyId',
         ]);
 
-        $property = auth()->user()->properties()->create($data);
+        $property->update($data);
 
-        return response()->json($property, 201);
+        return response()->json([
+            'message'  => 'Property updated successfully',
+            'property' => $property,
+        ]);
     }
+
+
+    public function destroy($slug)
+    {
+        $property = Property::where('slug', $slug)->first();
+        if (!$property) {
+            return response()->json(['message' => 'Property not found'], 404);
+        }
+
+        if ($property->addedBy !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $property->delete();
+        // Delete associated images from storage
+        foreach ($property->images as $image) {
+            Storage::disk('public')->delete($image->imageUrl);
+        }
+
+        // Also delete images from database
+        $property->images()->delete();
+
+        return response()->json(['message' => 'Property deleted successfully']);
+    }
+
+
+    public function deleteImage(Request $request, $slug, $imageId)
+    {
+        $property = Property::where('slug', $slug)->first();
+        if (!$property) {
+            return response()->json(['message' => 'Property not found'], 404);
+        }
+
+        if ($property->addedBy !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $image = $property->images()->where('imageId', $imageId)->first();
+        if (!$image) {
+            return response()->json(['message' => 'Image not found'], 404);
+        }
+
+        // Delete image file from storage
+        Storage::disk('public')->delete($image->imageUrl);
+
+        // Delete image record from database
+        $image->delete();
+
+        return response()->json(['message' => 'Image deleted successfully']);
+    }
+
+
+    public function propertyDetail($slug)
+    {
+        $property = Property::where('slug', $slug)->with('images','currency','property_type')->first();
+        if (!$property) {
+            return response()->json(['message' => 'Property not found'], 404);
+        }
+        return response()->json($property);
+    }
+
 }

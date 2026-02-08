@@ -31,7 +31,7 @@
     <p>Best regards,<br>The {{ $appName }} Team</p>
 
     <div class="footer">
-            <p>&copy; {{ date('Y') }} Property Community. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} Property Africa Plus. All rights reserved.</p>
             {{-- <p>Powered by ClickBase Technologies Ltd.</p> --}}
         </div>
   </div>

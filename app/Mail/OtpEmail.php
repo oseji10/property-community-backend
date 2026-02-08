@@ -30,7 +30,7 @@ class OtpEmail extends Mailable
      */
     public function build()
     {
-        return $this->subject('Verify Your Property Community Account')
+        return $this->subject('Verify Your Property Africa Plus Account')
                     ->view('emails.otp-verification')
                     ->with([
                         'firstName' => $this->firstName,

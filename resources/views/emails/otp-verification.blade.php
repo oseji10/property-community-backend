@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Verify Your Property Community Account</title>
+    <title>Verify Your Property Africa Plus Account</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -29,7 +29,7 @@
         <div class="content">
             <h2>Hello {{ $firstName }} {{ $lastName }},</h2>
 
-            <p>Welcome to Property Community! To complete your registration and verify your email address, please use the following verification code:</p>
+            <p>Welcome to Property Africa Plus! To complete your registration and verify your email address, please use the following verification code:</p>
 
             <div class="otp-code">
                 {{ $otp }}
@@ -37,9 +37,9 @@
 
             <p><strong>This code will expire in 10 minutes.</strong></p>
 
-            <p>Enter this code in the verification window to activate your account and start using Property Community.</p>
+            <p>Enter this code in the verification window to activate your account and start using Property Africa Plus.</p>
 
-            <p>If you didn't create an account with Property Community, please ignore this email.</p>
+            <p>If you didn't create an account with Property Africa Plus, please ignore this email.</p>
         </div>
 
         <tr>
@@ -48,7 +48,7 @@
                     <a href="https://propertycommunity.com">propertycommunity.com</a> ·
                     <a href="mailto:info@propertycommunity.com">info@propertycommunity.com</a>
                 </p>
-                <p>© {{ date('Y') }} Property Community</p>
+                <p>© {{ date('Y') }} Property Africa Plus</p>
             </td>
         </tr>
     </div>

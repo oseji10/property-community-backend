@@ -28,7 +28,7 @@ use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseTypeController;
-use App\Http\Controllers\LevelController;
+use App\Http\Controllers\PropertyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,7 +45,7 @@ use App\Http\Controllers\LevelController;
 // Route::middleware(['cors'])->group(function () {
     // Public routes
     Route::post('/auth/signup', [AuthController::class, 'signup']);
-    Route::post('/auth/signin', [AuthController::class, 'login']);
+    Route::post('/auth/signin', [AuthController::class, 'signin']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::post('/refresh', [AuthController::class, 'refresh']);
     Route::get('/users/profile', [AuthController::class, 'profile'])->middleware('auth.jwt'); // Use auth.jwt instead of auth:api
@@ -58,7 +58,9 @@ use App\Http\Controllers\LevelController;
     Route::get('/roles', [RolesController::class, 'user_roles']);
 
     Route::get('/announcement', [AnnouncementController::class, 'index']);
-   
+   Route::get('/properties', [PropertyController::class, 'index']);
+   Route::get('/properties/{slug}/detail', [PropertyController::class, 'propertyDetail']);
+
     // Protected routes with JWT authentication
     Route::middleware(['auth.jwt'])->group(function () {
         Route::get('/user', function () {
@@ -74,6 +76,16 @@ use App\Http\Controllers\LevelController;
             ]);
         });
 
+    Route::get('/currencies', function (){
+        $currencies = \App\Models\Currency::all();
+        return response()->json($currencies);
+    });
+    
+    Route::get('/property-types', function (){
+        $propertyTypes = \App\Models\PropertyType::all();
+        return response()->json($propertyTypes);
+    });
+
         // Application routes
     Route::get('/users/admins', [UsersController::class, 'admins']);
     Route::post('/users', [UsersController::class, 'store']);
@@ -84,99 +96,18 @@ use App\Http\Controllers\LevelController;
     Route::delete('/jamb/{jambId}', [JAMBController::class, 'destroy']);
     Route::get('/jamb/search', [JambController::class, 'search']);
        
-    Route::post('/apply', [ApplicationController::class, 'apply']);
-    Route::get('/applications', [ApplicationController::class, 'index']);
-    Route::get('/application/status/{email}', [ApplicationController::class, 'status']);
-    Route::get('/my-slips', [ApplicationController::class, 'mySlips']);
-    Route::get('/application/status', [ApplicationController::class, 'applicationStatus']);
-    Route::put('/application/{applicationId}/change-batch', [ApplicationController::class, 'changeBatch']);
-    Route::get('/attendance', [ApplicationController::class, 'attendance']);
-    // Route::post('/attendance/print', [ApplicationController::class, 'printAttendance'])->name('attendance.print');
 
-    Route::get('/admission-status', [AdmissionsController::class, 'status']);
-     Route::get('/admission-letter/{applicationId}', [AdmissionsController::class, 'showAdmissionLetter'])->name('admission.letter');
-     Route::get('/admissions/{applicationId}/letter', [AdmissionsController::class, 'adminDownloadAdmissionLetter']);
-     Route::get('/admissions', [AdmissionsController::class, 'index']);
-     Route::post('/admissions/bulk-upload', [AdmissionsController::class, 'bulkUpload']);
-     Route::get('/admission/programmes', [AdmissionsController::class, 'programmes']);
-     Route::get('/admission/sessions', [AdmissionsController::class, 'sessions']);
-     Route::get('admission/status', [AdmissionsController::class, 'admissionStatus']);
-
-    Route::post('/payment/initiate', [PaymentController::class, 'initiatePayment'])->middleware('auth.jwt');
-    Route::post('/payment/verify', [PaymentController::class, 'verify'])->middleware('auth.jwt');
-    Route::get('/my-payments', [PaymentController::class, 'myPayments']);
-    Route::get('/payments', [PaymentController::class, 'index']);
+    Route::get('/property-types', [PropertyController::class, 'propertyType']);
+    Route::post('/properties', [PropertyController::class, 'store']);
     
-    Route::get('/all-batches', [BatchController::class, 'batches']);
-    Route::get('/batches', [BatchController::class, 'index']);
-    Route::post('/batches', [BatchController::class, 'store']);
-    Route::put('/batches/{batchId}', [BatchController::class, 'update']);
-    Route::delete('/batches/{batchId}', [BatchController::class, 'destroy']);
-    Route::get('/rebatched', [ApplicationController::class, 'rebatched_candidates']);
-    Route::patch('/batches/{batchId}/verification', [BatchController::class, 'changeStatus']);
+    Route::get('/properties/my', [PropertyController::class, 'myProperties']);
+    Route::get('/properties/{slug}', [PropertyController::class, 'show']);
+    // Route::put('/properties/{slug}', [PropertyController::class, 'update']);
+    Route::PUT('/properties/{slug}/edit', [PropertyController::class, 'update'])
+    ->name('properties.update');
+     Route::delete('/properties/{slug}', [PropertyController::class, 'destroy']);
+     Route::delete('/properties/{slug}/images/{imageId}', [PropertyController::class, 'deleteImage']);
     
-     Route::get('/halls', [HallController::class, 'index']);
-     Route::get('/all-halls', [HallController::class, 'halls']);
-    Route::post('/halls', [HallController::class, 'store']);
-    Route::put('/halls/{hallId}', [HallController::class, 'update']);
-    Route::patch('/halls/{hallId}/status', [HallController::class, 'changeStatus']);
-    Route::delete('/halls/{hallId}', [HallController::class, 'destroy']);
-
-    Route::get('/batched-applicants', function () {
-        return \App\Models\BatchAssignment::with('applicants')->latest()->paginate(20);
-    });
-    
-    Route::get('/verify/slip', function () {
-        return "This is authentic!";
-    })->name('verify.slip');
-    
-    Route::get('/all-payments', [PaymentController::class, 'all_payments']);
-    Route::get('/analytics', [ApplicationController::class, 'analytics']);
-    Route::get('/payments/recent', [PaymentController::class, 'recentPayments']);
-
-    Route::get('/applicant/verify/{identifier}', [VerificationController::class, 'verifyCandidate']);
-    Route::post('/applicant/mark-present', [VerificationController::class, 'markPresent']);
-
-    Route::post('/attendance/print', [ApplicationController::class, 'printAttendance'])->name('attendance.print');
-Route::get('/candidates_states', [ApplicationController::class, 'candidates_states']);
-Route::get('/candidates_gender', [ApplicationController::class, 'candidates_gender']);
-Route::get('/batched_candidates', [ApplicationController::class, 'batched_candidates']);
-Route::get('/verified_candidates', [ApplicationController::class, 'verified_candidates']);
-
-Route::get('programmes', [ProgrammeController::class, 'index']);
-Route::post('programmes', [ProgrammeController::class, 'store']);
-Route::put('programmes/{programmeId}', [ProgrammeController::class, 'update']);
-Route::delete('programmes/{programmeId}', [ProgrammeController::class, 'destroy']);
-
-Route::get('sessions', [SessionController::class, 'index']);
-Route::post('sessions', [SessionController::class, 'store']);
-Route::put('sessions/{sessionId}', [SessionController::class, 'update']);
-Route::delete('sessions/{sessionId}', [SessionController::class, 'destroy']);
-Route::get('sessions/active', [SessionController::class, 'activeSession']);
-
-Route::get('semesters', [SemesterController::class, 'index']);
-Route::post('semesters', [SemesterController::class, 'store']);
-Route::put('semesters/{semesterId}', [SemesterController::class, 'update']);
-Route::delete('semesters/{semesterId}', [SemesterController::class, 'destroy']);
-Route::get('semesters/active', [SemesterController::class, 'activeSemesters']);
-
-Route::get('course-types', [CourseTypeController::class, 'index']);
-Route::post('course-types', [CourseTypeController::class, 'store']);
-Route::put('course-types/{courseId}', [CourseTypeController::class, 'update']);
-Route::delete('course-types/{courseId}', [CourseTypeController::class, 'destroy']);
-Route::get('courses/available', [CourseController::class, 'availableCourses']);
-
-
-Route::get('courses', [CourseController::class, 'index']);
-Route::post('courses', [CourseController::class, 'store']);
-Route::put('courses/{courseId}', [CourseController::class, 'update']);
-Route::delete('courses/{courseId}', [CourseController::class, 'destroy']);
-
-Route::get('levels', [LevelController::class, 'index']);
-Route::post('levels', [LevelController::class, 'store']);
-Route::put('levels/{levelId}', [LevelController::class, 'update']);
-Route::delete('levels/{levelId}', [LevelController::class, 'destroy']);
-Route::get('levels/{level}', [LevelController::class, 'currentLevel']);
 
 
 });

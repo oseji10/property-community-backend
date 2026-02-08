@@ -27,10 +27,11 @@ class User extends Authenticatable implements JWTSubject
         'lastName',
         'otherNames',
         'password', 
-        
+        'status',
         'otp_code',
         'otp_expires_at',
         'email_verified_at',
+        'currentPlan'
     ];
     protected $dates = ['deleted_at'];
     protected $hidden = ['password'];

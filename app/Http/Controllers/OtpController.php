@@ -79,7 +79,7 @@ class OtpController extends Controller
 
         Mail::send('emails.otp', $data, function($message) use ($email) {
             $message->to($email)
-                    ->subject('Your Property Community Verification Code');
+                    ->subject('Your Property Africa Plus Verification Code');
         });
     }
 

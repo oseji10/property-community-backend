@@ -17,8 +17,8 @@ class Property extends Model
 
     protected $fillable = [
         'propertyId',
-        'typeId',
-        'propertyTtitle',
+        'propertyTypeId',
+        'propertyTitle',
         'propertyDescription',
         'addedBy',
         'address',
@@ -28,7 +28,16 @@ class Property extends Model
         'listingType',
         'bedrooms',
         'bathrooms',
-        'isAvailable'
+        'garage',
+        'longitude',
+        'latitude',
+        'otherFeatures',
+        'amenities',
+        'status',
+        'slug',
+        'currency',
+        'isAvailable',
+        'size'
     ];
 
 
@@ -46,6 +55,16 @@ class Property extends Model
     public function transactions()
     {
         return $this->morphMany(Transaction::class, 'transactionable');
+    }
+
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class, 'currency', 'currencyId');
+    }
+
+     public function property_type()
+    {
+        return $this->belongsTo(PropertyType::class, 'propertyTypeId', 'typeId');
     }
 }
 
