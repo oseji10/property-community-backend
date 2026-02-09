@@ -6,16 +6,16 @@
 <body>
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
     <img
-                    src="https://backend.propertyplusafrica.com/property_images/dark-propertyafrica.svg"
+                    src="https://backend.propertyplusafrica.com/property_images/dark-propertyafrica.jpg"
                     alt="Property Plus Africa"
                     width="140"
                 >
 
-        <h2 style="color: #FF8C00;">Property Africa Plus - Email Verification</h2>
+        <h2 style="color: #FF8C00;">Property Plus Africa - Email Verification</h2>
 
         <p>Hello,</p>
 
-        <p>Thank you for signing up with Property Africa Plus! Use the verification code below to complete your registration:</p>
+        <p>Thank you for signing up with Property Plus Africa! Use the verification code below to complete your registration:</p>
 
         <div style="background-color: #f3f4f6; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px;">
             <h1 style="color: #2563eb; font-size: 32px; letter-spacing: 8px; margin: 0;">{{ $otp }}</h1>
@@ -35,10 +35,10 @@
       <tr>
             <td class="footer">
                 <p>
-                    <a href="https://propertycommunity.com">propertycommunity.com</a> ·
-                    <a href="mailto:info@propertycommunity.com">info@propertycommunity.com</a>
+                    <a href="https://propertyplusafrica.com">propertyplusafrica.com</a> ·
+                    <a href="mailto:info@propertyplusafrica.com">info@propertyplusafrica.com</a>
                 </p>
-                <p>© {{ date('Y') }} Property Africa Plus</p>
+                <p>© {{ date('Y') }} Property Plus Africa</p>
             </td>
         </tr>
 </body>

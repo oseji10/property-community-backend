@@ -13,7 +13,11 @@
 </head>
 <body>
   <div class="container">
-    <img src="https://app.clickinvoice1.app/images/logo/logo-dark.png" alt="ClickInvoice Logo" style="max-width: 150px; display: block; margin: 0 auto 10px;">
+     <img
+                    src="https://backend.propertyplusafrica.com/property_images/dark-propertyafrica.jpg"
+                    alt="Property Plus Africa"
+                    width="140"
+                >
 
   <div class="content">
     <h2>Welcome to {{ $appName }}, {{ $user->firstName }}!</h2>
@@ -31,7 +35,7 @@
     <p>Best regards,<br>The {{ $appName }} Team</p>
 
     <div class="footer">
-            <p>&copy; {{ date('Y') }} Property Africa Plus. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} Property Plus Africa. All rights reserved.</p>
             {{-- <p>Powered by ClickBase Technologies Ltd.</p> --}}
         </div>
   </div>

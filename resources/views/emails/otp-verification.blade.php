@@ -21,7 +21,7 @@
 <body>
     <div class="container">
         <img
-                    src="https://backend.propertyplusafrica.com/property_images/dark-propertyafrica.svg"
+                    src="https://backend.propertyplusafrica.com/property_images/dark-propertyafrica.jpg"
                     alt="Property Plus Africa"
                     width="140"
                 >
@@ -29,7 +29,7 @@
         <div class="content">
             <h2>Hello {{ $firstName }} {{ $lastName }},</h2>
 
-            <p>Welcome to Property Africa Plus! To complete your registration and verify your email address, please use the following verification code:</p>
+            <p>Welcome to Property Plus Africa! To complete your registration and verify your email address, please use the following verification code:</p>
 
             <div class="otp-code">
                 {{ $otp }}
@@ -37,9 +37,9 @@
 
             <p><strong>This code will expire in 10 minutes.</strong></p>
 
-            <p>Enter this code in the verification window to activate your account and start using Property Africa Plus.</p>
+            <p>Enter this code in the verification window to activate your account and start using Property Plus Africa.</p>
 
-            <p>If you didn't create an account with Property Africa Plus, please ignore this email.</p>
+            <p>If you didn't create an account with Property Plus Africa, please ignore this email.</p>
         </div>
 
         <tr>
@@ -48,7 +48,7 @@
                     <a href="https://propertyplusafrica.com">propertyplusafrica.com</a> ·
                     <a href="mailto:info@propertyplusafrica.com">info@propertyplusafrica.com</a>
                 </p>
-                <p>© {{ date('Y') }} Property Africa Plus</p>
+                <p>© {{ date('Y') }} Property Plus Africa</p>
             </td>
         </tr>
     </div>
