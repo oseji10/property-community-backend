@@ -6,7 +6,7 @@
 <body>
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
     <img
-                    src="https://propertyplusafrica.com/property_images/dark-propertyafrica.svg"
+                    src="https://backend.propertyplusafrica.com/property_images/dark-propertyafrica.svg"
                     alt="Property Plus Africa"
                     width="140"
                 >
