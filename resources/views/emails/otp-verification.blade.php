@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Verify Your Property Africa Plus Account</title>
+    <title>Verify Your Property Plus Africa Account</title>
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -20,9 +20,9 @@
 </head>
 <body>
     <div class="container">
-       <img
-                    src="https://app.clickinvoice.app/images/logo/logo.png"
-                    alt="ClickInvoice"
+        <img
+                    src="https://propertyplusafrica.com/property_images/dark-propertyafrica.svg"
+                    alt="Property Plus Africa"
                     width="140"
                 >
 
@@ -45,8 +45,8 @@
         <tr>
             <td class="footer">
                 <p>
-                    <a href="https://propertycommunity.com">propertycommunity.com</a> ·
-                    <a href="mailto:info@propertycommunity.com">info@propertycommunity.com</a>
+                    <a href="https://propertyplusafrica.com">propertyplusafrica.com</a> ·
+                    <a href="mailto:info@propertyplusafrica.com">info@propertyplusafrica.com</a>
                 </p>
                 <p>© {{ date('Y') }} Property Africa Plus</p>
             </td>

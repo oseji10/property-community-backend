@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Your ClickInvoice Verification Code</title>
+    <title>Your Property Plus Africa Verification Code</title>
 </head>
 <body>
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
     <img
-                    src="https://app.clickinvoice.app/images/logo/logo.png"
-                    alt="ClickInvoice"
+                    src="https://propertyplusafrica.com/property_images/dark-propertyafrica.svg"
+                    alt="Property Plus Africa"
                     width="140"
                 >
 
@@ -29,7 +29,7 @@
 
         <p style="color: #6b7280; font-size: 14px;">
             Best regards,<br>
-            The ClickInvoice Team
+            The Property Plus Africa Team
         </p>
     </div>
       <tr>
