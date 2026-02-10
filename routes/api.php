@@ -60,6 +60,7 @@ use App\Http\Controllers\PropertyController;
     Route::get('/announcement', [AnnouncementController::class, 'index']);
    Route::get('/properties', [PropertyController::class, 'index']);
    Route::get('/properties/{slug}/detail', [PropertyController::class, 'propertyDetail']);
+    Route::get('/all-property-types', [PropertyController::class, 'propertyType']);
 
     // Protected routes with JWT authentication
     Route::middleware(['auth.jwt'])->group(function () {
@@ -97,7 +98,7 @@ use App\Http\Controllers\PropertyController;
     Route::get('/jamb/search', [JambController::class, 'search']);
        
 
-    Route::get('/property-types', [PropertyController::class, 'propertyType']);
+    // Route::get('/property-types', [PropertyController::class, 'propertyType']);
     Route::post('/properties', [PropertyController::class, 'store']);
     
     Route::get('/properties/my', [PropertyController::class, 'myProperties']);

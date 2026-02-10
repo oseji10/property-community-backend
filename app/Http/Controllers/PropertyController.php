@@ -20,13 +20,66 @@ use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
 {
-    public function index()
-    {
-        return Property::where('isAvailable', true)
-            ->with('images','owner', 'currency', 'property_type')
-            ->latest()
-            ->paginate(10);
+    public function index(Request $request)
+{
+    $query = Property::query()->where('isAvailable', true);
+
+    // Eager load relations
+    $query->with('images', 'owner', 'currency', 'property_type');
+
+    // Filters
+   if ($request->filled('type')) {
+    $type = strtolower($request->type);
+
+    // Map frontend values to DB values if needed
+    if ($type === 'buy' || $type === 'sale') {
+        $type = 'sale';
+    } elseif ($type === 'rent') {
+        $type = 'rent';
+    } else {
+        $type = null; // ignore invalid types
     }
+
+    if ($type) {
+        $query->where('listingType', $type); // column in DB
+    }
+}
+
+
+    if ($request->filled('location')) {
+        $location = $request->location;
+        $query->where(function($q) use ($location) {
+            $q->where('city', 'like', "%{$location}%")
+              ->orWhere('state', 'like', "%{$location}%")
+              ->orWhere('address', 'like', "%{$location}%");
+        });
+    }
+
+    if ($request->filled('propertyType')) {
+        $query->where('propertyTypeId', $request->propertyType);
+    }
+
+    if ($request->filled('min')) {
+        $query->where('price', '>=', $request->min);
+    }
+
+    if ($request->filled('max')) {
+        $query->where('price', '<=', $request->max);
+    }
+
+    if ($request->filled('beds')) {
+        $query->where('bedrooms', $request->beds);
+    }
+
+    // Latest properties first, paginate 10 per page
+    $properties = $query->latest()->paginate(10);
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $properties,
+    ]);
+}
+
 
     public function propertyType()
     {
