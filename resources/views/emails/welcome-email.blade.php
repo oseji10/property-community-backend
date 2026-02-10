@@ -14,7 +14,7 @@
 <body>
   <div class="container">
      <img
-                    src="https://backend.propertyplusafrica.com/property_images/dark-propertyafrica.jpg"
+                    src="https://backend.propertyplusafrica.com/images/logo.png"
                     alt="Property Plus Africa"
                     width="140"
                 >
