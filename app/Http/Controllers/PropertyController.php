@@ -262,7 +262,7 @@ public function store(Request $request)
 
     public function propertyDetail($slug)
     {
-        $property = Property::where('slug', $slug)->with('images','currency','property_type')->first();
+        $property = Property::where('slug', $slug)->with('images','currency','property_type', 'owner.user_role')->first();
         if (!$property) {
             return response()->json(['message' => 'Property not found'], 404);
         }

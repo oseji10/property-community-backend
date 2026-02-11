@@ -29,6 +29,7 @@ use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseTypeController;
 use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\FavoriteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +45,7 @@ use App\Http\Controllers\PropertyController;
 
 // Route::middleware(['cors'])->group(function () {
     // Public routes
+    Route::post('/login', [AuthController::class, 'general_login']);
     Route::post('/auth/signup', [AuthController::class, 'signup']);
     Route::post('/auth/signin', [AuthController::class, 'signin']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -111,6 +113,7 @@ use App\Http\Controllers\PropertyController;
      Route::delete('/properties/{slug}/images/{imageId}', [PropertyController::class, 'deleteImage']);
     
 
+     Route::post('/favorites', [FavoriteController::class, 'store']);
 
 });
 

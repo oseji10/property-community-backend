@@ -44,7 +44,7 @@ class Property extends Model
 
     public function owner()
     {
-        return $this->belongsTo(User::class, 'id', 'userId');
+        return $this->belongsTo(User::class, 'addedBy', 'id');
     }
 
     public function images()

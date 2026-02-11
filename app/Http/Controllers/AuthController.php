@@ -47,7 +47,65 @@ class AuthController extends Controller
        
     }
 
- 
+ public function general_login(Request $request)
+{
+    $request->validate([
+        'username' => 'required|string',
+        'password' => 'required|string',   // ← usually required
+    ]);
+
+    // Try to log in using the username (email or phone)
+    $credentials = $request->only('username', 'password');
+
+    $user = User::with(['user_role'])
+        ->where('email', $request->username)
+        ->orWhere('phoneNumber', $request->username)
+        ->first();
+
+    if (!$user) {
+        return response()->json([
+            'status'  => false,
+            'code'    => 'USER_NOT_FOUND',
+            'message' => 'No account found',
+        ], 404);
+    }
+
+      if (!$accessToken = auth('api')->attempt([
+        'email'    => $user->email,
+        'password' => $request->password,
+    ])) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Invalid credentials',
+        ], 401);
+    }
+
+    $user = auth('api')->user()->load('user_role');
+
+    $refreshToken = bin2hex(random_bytes(40)); // or Str::random(80)
+
+    RefreshToken::create([
+        'user_id'    => $user->id,
+        'token'      => $refreshToken,
+        'expires_at' => now()->addDays(14),
+    ]);
+
+    $user->makeHidden(['password']);
+
+    return response()->json([
+        'status'      => true,
+        'message'     => 'Logged in',
+        'firstName'   => $user->firstName ?? '',
+        'lastName'    => $user->lastName ?? '',
+        'email'       => $user->email ?? '',
+        'phoneNumber' => $user->phoneNumber ?? '',
+        'role'        => $user->user_role->roleName ?? null,
+        'profileImage'=> $user->profileImage ?? '/avatar.png',
+        'coverImage'  => $user->coverImage ?? '/cover_photo.jpg',
+    ])
+    ->cookie('access_token',  $accessToken,  60 * 24 * 2,   null, null, true, true, false, 'lax')
+    ->cookie('refresh_token', $refreshToken, 60 * 24 * 14,  null, null, true, true, false, 'lax');
+}
 public function signin(Request $request)
 {
     $request->validate([
@@ -154,8 +212,30 @@ public function signin(Request $request)
         'profileImage'=> $user->profileImage ?? '/avatar.png',
         'coverImage'  => $user->coverImage ?? '/cover_photo.jpg',
     ])
-    ->cookie('access_token', $accessToken, 60, null, null, true, true, false, 'strict')
-    ->cookie('refresh_token', $refreshToken, 14 * 24 * 60, null, null, true, true, false, 'strict');
+    
+    ->cookie(
+        'access_token',
+        $newAccessToken,
+        60 * 24 * 2, // 2 days
+        null,
+        null,
+        true,
+        true,
+        false,
+        'strict'
+    )
+    ->cookie(
+        'refresh_token',
+        $newRefreshToken,
+        60 * 24 * 14, // 14 days
+        null,
+        null,
+        true,
+        true,
+        false,
+        'strict'
+    );
+
 }
 
     public function refresh(Request $request)
@@ -188,9 +268,29 @@ public function signin(Request $request)
             'expires_at' => Carbon::now()->addDays(14),
         ]);
 
-        return response()->json(['message' => 'Token refreshed'])
-            ->cookie('access_token', $newAccessToken, 60, null, null, true, true, false, 'strict')
-            ->cookie('refresh_token', $newRefreshToken, 14 * 24 * 60, null, null, true, true, false, 'strict');
+     return response()->json(['message' => 'Token refreshed'])
+    ->cookie(
+        'access_token',
+        $newAccessToken,
+        60 * 24 * 2, // 2 days
+        null,
+        null,
+        true,
+        true,
+        false,
+        'strict'
+    )
+    ->cookie(
+        'refresh_token',
+        $newRefreshToken,
+        60 * 24 * 14, // 14 days
+        null,
+        null,
+        true,
+        true,
+        false,
+        'strict'
+    );
     }
       
 
