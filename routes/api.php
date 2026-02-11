@@ -54,6 +54,7 @@ use App\Http\Controllers\PropertyController;
     Route::post('/auth/verify-otp', [OtpController::class, 'verifyOtp']);
     Route::post('/auth/setup-password', [AuthController::class, 'setupPassword']);
 
+    Route::post('/contact', [App\Http\Controllers\ContactController::class, 'store']);
 
     Route::get('/roles', [RolesController::class, 'user_roles']);
 

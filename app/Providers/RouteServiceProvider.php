@@ -24,6 +24,8 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureRateLimiting();
+
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
@@ -35,6 +37,14 @@ class RouteServiceProvider extends ServiceProvider
 
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
+        });
+
+        }
+        protected function configureRateLimiting(): void
+    {
+        RateLimiter::for('contact-form', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip()); // 5 submissions per minute per IP
+            // Alternative: perHour(20)->by($request->ip()); for stricter control
         });
     }
 }
