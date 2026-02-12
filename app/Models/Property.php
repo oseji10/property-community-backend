@@ -72,6 +72,31 @@ class Property extends Model
     {
         return number_format($value);
     }
+
+    public function messages()
+{
+    return $this->hasMany(Message::class)          // or Inquiry::class
+                ->latest();                         // newest first
+}
+
+// Optional: only messages sent TO the owner (inquiries)
+public function inquiries()
+{
+    return $this->hasMany(Message::class, 'receiverId', 'addedBy')
+                ->where('receiverId', $this->userId) // if you have receiver_id
+                ->latest();
+}
+
+public function favoritedBy()
+{
+    return $this->belongsToMany(
+        User::class,           // related model
+        'favorites',  // pivot table name
+        'propertyId',         // foreign key for THIS model (Property) in pivot table
+        'userId'              // foreign key for the RELATED model (User) in pivot table
+    )
+    ->withTimestamps();
+}
 }
 
 

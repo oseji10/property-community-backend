@@ -109,6 +109,7 @@ use App\Http\Controllers\FavoriteController;
     // Route::put('/properties/{slug}', [PropertyController::class, 'update']);
     Route::PUT('/properties/{slug}/edit', [PropertyController::class, 'update'])
     ->name('properties.update');
+    Route::PATCH('/properties/{slug}/status', [PropertyController::class, 'updateStatus']);
      Route::delete('/properties/{slug}', [PropertyController::class, 'destroy']);
      Route::delete('/properties/{slug}/images/{imageId}', [PropertyController::class, 'deleteImage']);
     

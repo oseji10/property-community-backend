@@ -163,15 +163,59 @@ public function store(Request $request)
     }
 
 
-    public function show(Request $request, $slug){
-        $property = Property::where('slug', $slug)->with('images','currency','property_type')->first();
-        if (!$property) {
-            return response()->json(['message' => 'Property not found'], 404);
-        }
-        // $property->increment('views');
- 
-        return response()->json($property);
+    // public function show(Request $request, $slug){
+    //     $property = Property::where('slug', $slug)->with('images','currency','property_type')->first();
+    //     if (!$property) {
+    //         return response()->json(['message' => 'Property not found'], 404);
+    //     }
+        
+    //     return response()->json($property);
+    // }
+
+    public function show(Request $request, $slug)
+{
+    $property = Property::where('slug', $slug)
+        ->with([
+            'images',
+            'currency',
+            'property_type',
+            // If you have these relationships defined, include them too
+            'owner',
+            'inquiries'
+        ])
+        ->first();
+
+    if (!$property) {
+        return response()->json(['message' => 'Property not found'], 404);
     }
+
+    // Option 1: If you have a view_count column on properties table (recommended)
+    $viewsCount = (int) $property->views ?? 0;
+
+  
+    // Favorites count – assuming many-to-many relationship named 'favoritedBy' or 'favorites'
+    $favoritesCount = $property->favoritedBy()->count();   // or ->favorites()->count();
+
+    // Check if current user is the owner
+    $isOwner = $request->user() && $request->user()->id === $property->addedBy;
+
+    // You can either:
+    // A) Add attributes directly to the model instance (cleanest for frontend)
+    // $property->viewsCount     = $viewsCount;
+    // $property->favoritesCount = $favoritesCount;
+    // $property->isOwner        = $isOwner;
+
+    // B) Or return a custom array / resource (more control over what’s sent)
+    return response()->json([
+        'property' => $property,
+        'viewsCount' => $viewsCount,
+        'favoritesCount' => $favoritesCount,
+        'isOwner' => $isOwner,
+    ]);
+
+    // Most common & clean approach: just augment the model
+    // return response()->json($property);
+}
 
 
     public function update(Request $request, $slug)
@@ -209,6 +253,30 @@ public function store(Request $request)
 
         return response()->json([
             'message'  => 'Property updated successfully',
+            'property' => $property,
+        ]);
+    }
+
+
+     public function updateStatus(Request $request, $slug)
+    {
+        $property = Property::where('slug', $slug)->first();
+        if (!$property) {
+            return response()->json(['message' => 'Property not found'], 404);
+        }
+
+        if ($property->addedBy !== auth()->id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $data = $request->validate([
+            'status'                => 'nullable|string',
+            ]);
+
+        $property->update($data);
+
+        return response()->json([
+            'message'  => 'Property status successfully',
             'property' => $property,
         ]);
     }
