@@ -197,7 +197,8 @@ public function store(Request $request)
     $favoritesCount = $property->favoritedBy()->count();   // or ->favorites()->count();
 
     // Check if current user is the owner
-    $isOwner = $request->user() && $request->user()->id === $property->addedBy;
+
+    $isOwner = auth()->user()->id === $property->addedBy;
 
     // You can either:
     // A) Add attributes directly to the model instance (cleanest for frontend)
