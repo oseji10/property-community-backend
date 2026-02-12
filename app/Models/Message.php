@@ -16,16 +16,16 @@ class Message extends Model
 
     public function sender()
     {
-        return $this->belongsTo(User::class, 'id', 'senderId');
+        return $this->belongsTo(User::class, 'senderId', 'id');
     }
 
     public function receiver()
     {
-        return $this->belongsTo(User::class, 'id', 'receiverId');
+        return $this->belongsTo(User::class, 'receiverId', 'id');
     }
 
     public function property()
     {
-        return $this->belongsTo(Property::class, 'propertyId', 'property_id');
+        return $this->belongsTo(Property::class, 'propertyId', 'propertyId');
     }
 }

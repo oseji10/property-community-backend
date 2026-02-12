@@ -16,6 +16,8 @@ use PDF;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
+
 
 
 class PropertyController extends Controller
@@ -166,6 +168,8 @@ public function store(Request $request)
         if (!$property) {
             return response()->json(['message' => 'Property not found'], 404);
         }
+        // $property->increment('views');
+ 
         return response()->json($property);
     }
 
@@ -266,6 +270,13 @@ public function store(Request $request)
         if (!$property) {
             return response()->json(['message' => 'Property not found'], 404);
         }
+               // Optional: more accurate (per IP per day)
+    $ip = request()->ip();
+    $key = "property_view:{$property->propertyId}:{$ip}";
+    if (!Cache::has($key)) {
+        $property->increment('views');
+        Cache::put($key, true, now()->addDay());
+    }
         return response()->json($property);
     }
 

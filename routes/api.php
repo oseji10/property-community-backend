@@ -17,7 +17,7 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\TransactionsController;
-use App\Http\Controllers\JAMBController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\PDFController;
@@ -120,6 +120,15 @@ use App\Http\Controllers\FavoriteController;
 
     // Messages
     Route::post('/messages', [MessageController::class, 'store']);
+    // Inbox - messages sent to the authenticated user
+    Route::get('/messages/inbox', [MessageController::class, 'inbox']);
+
+    // Reply to a specific message
+    Route::post('/messages/{message}/reply', [MessageController::class, 'reply']);
+
+    // Mark message as read
+    Route::patch('/messages/{message}/read', [MessageController::class, 'markAsRead']);
+    Route::get('/messages/unread-count', [MessageController::class, 'unreadCount']);
 
 });
 

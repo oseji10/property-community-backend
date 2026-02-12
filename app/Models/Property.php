@@ -37,7 +37,8 @@ class Property extends Model
         'slug',
         'currency',
         'isAvailable',
-        'size'
+        'size',
+        'views',
     ];
 
 
@@ -65,6 +66,11 @@ class Property extends Model
      public function property_type()
     {
         return $this->belongsTo(PropertyType::class, 'propertyTypeId', 'typeId');
+    }
+
+    public function getViewsAttribute($value)
+    {
+        return number_format($value);
     }
 }
 
