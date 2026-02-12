@@ -215,7 +215,7 @@ public function signin(Request $request)
     
     ->cookie(
         'access_token',
-        $newAccessToken,
+        $accessToken,
         60 * 24 * 2, // 2 days
         null,
         null,
@@ -226,7 +226,7 @@ public function signin(Request $request)
     )
     ->cookie(
         'refresh_token',
-        $newRefreshToken,
+        $refreshToken,
         60 * 24 * 14, // 14 days
         null,
         null,

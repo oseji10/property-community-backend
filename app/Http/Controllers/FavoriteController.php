@@ -25,6 +25,18 @@ class FavoriteController extends Controller
         ]);
     }
 
+    public function check($propertyId)
+    {
+        $isFavorite = Favorite::where('userId', Auth::id())
+            ->where('propertyId', $propertyId)
+            ->exists();
+
+        return response()->json([
+            'status' => 'success',
+            'isFavorite' => $isFavorite
+        ]);
+    }
+
     /**
      * Add property to favorites
      */
@@ -81,18 +93,5 @@ class FavoriteController extends Controller
         ]);
     }
 
-    /**
-     * Check if property is favorited by user
-     */
-    public function check($propertyId)
-    {
-        $exists = Favorite::where('user_id', Auth::id())
-            ->where('property_id', $propertyId)
-            ->exists();
-
-        return response()->json([
-            'status' => 'success',
-            'isFavorite' => $exists
-        ]);
-    }
+  
 }

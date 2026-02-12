@@ -114,6 +114,12 @@ use App\Http\Controllers\FavoriteController;
     
 
      Route::post('/favorites', [FavoriteController::class, 'store']);
+     Route::get('/favorites/check/{propertyId}', [FavoriteController::class, 'check']);
+    
+    Route::delete('/favorites/{propertyId}', [FavoriteController::class, 'destroy']);
+
+    // Messages
+    Route::post('/messages', [MessageController::class, 'store']);
 
 });
 
