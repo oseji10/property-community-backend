@@ -6,10 +6,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\BeneficiariesController;
 use App\Http\Controllers\HospitalController;
-use App\Http\Controllers\LgaController;
+use App\Http\Controllers\PromotionPackages;
 use App\Http\Controllers\ProductsController;
 use App\Http\Controllers\RolesController;
-use App\Http\Controllers\StateController;
+use App\Http\Controllers\PropertyFeatureController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\MinistryController;
 use App\Http\Controllers\OtpController;
@@ -23,7 +23,8 @@ use App\Http\Controllers\BatchController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\HallController;
-use App\Http\Controllers\ProgrammeController;
+use App\Http\Controllers\FlutterwaveWebhookController;
+use App\Http\Controllers\PaystackWebhookController;
 use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\CourseController;
@@ -96,10 +97,7 @@ use App\Http\Controllers\FavoriteController;
     Route::get('/users/admin_roles', [RolesController::class, 'admin_roles']);
     Route::delete('/users/{userId}/delete', [UsersController::class, 'destroy']);
 
-    Route::post('/jamb/upload', [JAMBController::class, 'upload']);
-    Route::delete('/jamb/{jambId}', [JAMBController::class, 'destroy']);
-    Route::get('/jamb/search', [JambController::class, 'search']);
-       
+  
 
     // Route::get('/property-types', [PropertyController::class, 'propertyType']);
     Route::post('/properties', [PropertyController::class, 'store']);
@@ -131,11 +129,30 @@ use App\Http\Controllers\FavoriteController;
     Route::patch('/messages/{message}/read', [MessageController::class, 'markAsRead']);
     Route::get('/messages/unread-count', [MessageController::class, 'unreadCount']);
 
-});
 
-Route::get('/application/slip/{applicationId}', [PDFController::class, 'generateExamSlip']);
-Route::get('analytics/total-users', [AnalyticsController::class, 'getTotalBeneficiaries']);
+    // Initiate payment
+Route::post('/properties/{slug}/initiate-feature-payment', [PropertyFeatureController::class, 'initiatePayment']);
+
+// Callback after payment (redirect from Flutterwave)
+Route::get('/properties/feature/callback', [PropertyFeatureController::class, 'handleCallback'])
+    ->name('feature.callback');
+
+// Webhook (Flutterwave → your server)
+Route::post('/webhooks/flutterwave', [FlutterwaveWebhookController::class, 'handle'])
+    ->name('flutterwave.webhook');
+
+  
+
+});
+  Route::get('/promotion/verify-redirect', [PropertyFeatureController::class, 'handleCallback']);
+Route::get('/featured-plans', function(){
+    $plans = \App\Models\PromotionPackages::where('promotionType', 'featured')->orderBy('packageId')->get()->makeHidden([ 'created_at', 'updated_at', 'deleted_at']);
+    return response()->json($plans);
+});
 
 Route::options('{any}', function () {
     return response()->json([], 200);
 })->where('any', '.*');
+
+Route::post('/webhooks/flutterwave', [FlutterwaveWebhookController::class, 'handle']);
+Route::post('/webhooks/paystack', [PaystackWebhookController::class, 'handle']);

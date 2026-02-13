@@ -39,6 +39,8 @@ class Property extends Model
         'isAvailable',
         'size',
         'views',
+        'isFeatured',
+        'featuredUntil'
     ];
 
 

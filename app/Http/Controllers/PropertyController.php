@@ -191,6 +191,7 @@ public function store(Request $request)
 
     // Option 1: If you have a view_count column on properties table (recommended)
     $viewsCount = (int) $property->views ?? 0;
+    $isFeatured = (int) $property->isFeatured ?? 0;
 
   
     // Favorites count – assuming many-to-many relationship named 'favoritedBy' or 'favorites'
@@ -212,6 +213,7 @@ public function store(Request $request)
         'property' => $property,
         'viewsCount' => $viewsCount,
         'favoritesCount' => $favoritesCount,
+        'isFeatured' => $isFeatured,
         'isOwner' => $isOwner,
     ]);
 

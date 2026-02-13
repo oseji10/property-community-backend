@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2bd7f47b3fecaf52e92ccd86844e4a5a",
+    "content-hash": "c06e149e115a2492f24821b7c6435ff3",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -425,6 +425,78 @@
                 }
             ],
             "time": "2024-09-19T14:15:21+00:00"
+        },
+        {
+            "name": "damms005/laravel-flutterwave",
+            "version": "v3.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/damms005/laravel-flutterwave.git",
+                "reference": "9fb69adc250f1227b8bef5bcf2d99b61afc27867"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/damms005/laravel-flutterwave/zipball/9fb69adc250f1227b8bef5bcf2d99b61afc27867",
+                "reference": "9fb69adc250f1227b8bef5bcf2d99b61afc27867",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.2",
+                "orchestra/testbench": "^4.0",
+                "phpunit/phpunit": "^8.3",
+                "satooshi/php-coveralls": ">0.7",
+                "scrutinizer/ocular": "^1.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Rave": "KingFlamez\\Rave\\Facades\\Rave"
+                    },
+                    "providers": [
+                        "KingFlamez\\Rave\\RaveServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "KingFlamez\\Rave\\": "src/"
+                },
+                "classmap": [
+                    "src/Rave.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Damilola Olowookere",
+                    "email": "damms005@gmail.com"
+                }
+            ],
+            "description": "A Laravel Package for Flutterwave Rave",
+            "keywords": [
+                "Flutterwave Rave",
+                "flutterwave",
+                "github",
+                "laravel",
+                "open source",
+                "payments",
+                "php",
+                "rave",
+                "ravepay.co"
+            ],
+            "support": {
+                "issues": "https://github.com/damms005/laravel-flutterwave/issues",
+                "source": "https://github.com/damms005/laravel-flutterwave/tree/v3.1"
+            },
+            "time": "2025-08-23T12:18:32+00:00"
         },
         {
             "name": "dasprid/enum",
@@ -9927,5 +9999,5 @@
         "php": "^8.2"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

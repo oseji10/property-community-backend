@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Payment extends Model
 {
     public $table = 'payments';
-    // protected $primaryKey = 'resultId';
+    protected $primaryKey = 'paymentId';
     protected $fillable = [
-        'applicationId', 'userId', 'rrr', 'amount', 'orderId', 'status', 'response', 'channel', 'paymentDate'
+        'propertyId', 'userId', 'paymentMethod', 'amount', 'transactionId', 'transactionReference', 'status', 'metaData', 'paymentGateway', 
     ];
 
     public function users()
@@ -17,9 +17,9 @@ class Payment extends Model
         return $this->belongsTo(User::class, 'userId', 'id'); 
     }
 
-      public function applications()
+      public function property()
     {
-        return $this->belongsTo(Applications::class, 'applicationId', 'applicationId'); 
+        return $this->belongsTo(Property::class, 'propertyId', 'propertyId'); 
     }
 
    

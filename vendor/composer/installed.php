@@ -3,7 +3,7 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'a4f258d8d0fc9353b16224d02c5ea37649f66c70',
+        'reference' => 'd37dc42620b38d5226c30c8627bc47c8855aeb29',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -69,6 +69,15 @@
             'replaced' => array(
                 0 => '*',
             ),
+        ),
+        'damms005/laravel-flutterwave' => array(
+            'pretty_version' => 'v3.1',
+            'version' => '3.1.0.0',
+            'reference' => '9fb69adc250f1227b8bef5bcf2d99b61afc27867',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../damms005/laravel-flutterwave',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'dasprid/enum' => array(
             'pretty_version' => '1.0.6',
@@ -478,7 +487,7 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'a4f258d8d0fc9353b16224d02c5ea37649f66c70',
+            'reference' => 'd37dc42620b38d5226c30c8627bc47c8855aeb29',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

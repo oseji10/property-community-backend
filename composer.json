@@ -7,6 +7,7 @@
     "require": {
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.1",
+        "damms005/laravel-flutterwave": "^3.1",
         "firebase/php-jwt": "^6.11",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^12.0",

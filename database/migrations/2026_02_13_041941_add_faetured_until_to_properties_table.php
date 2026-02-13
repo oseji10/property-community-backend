@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('property_favorites', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('properties', function (Blueprint $table) {
+          $table->timestamp('featuredUntil')->nullable()->after('isFeatured');
+
         });
     }
 
@@ -22,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('property_favorites');
+        Schema::table('properties', function (Blueprint $table) {
+            //
+        });
     }
 };
