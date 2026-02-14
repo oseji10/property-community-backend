@@ -11,25 +11,58 @@ class PaystackWebhookController extends Controller{
     
 public function handle(Request $request)
 {
-    // return "Test";
-    // Paystack sends JSON with 'event' and 'data'
+    $secret = env('PAYSTACK_SECRET_KEY');
+
+    // 1️⃣ Get signature from header
+    $signature = $request->header('x-paystack-signature');
+
+    if (!$signature) {
+        Log::warning('Paystack webhook: No signature found');
+        return response()->json(['status' => 'no_signature'], 400);
+    }
+
+    // 2️⃣ Compute signature
+    $computedSignature = hash_hmac(
+        'sha512',
+        $request->getContent(),
+        $secret
+    );
+
+    // 3️⃣ Compare signatures
+    if (!hash_equals($computedSignature, $signature)) {
+        Log::warning('Paystack webhook: Invalid signature');
+        return response()->json(['status' => 'invalid_signature'], 400);
+    }
+
+    // 4️⃣ Signature valid → process webhook
     $payload = $request->all();
-    \Log::info('PAYSTACK WEBHOOK:', $payload);
+    Log::info('PAYSTACK WEBHOOK RECEIVED', $payload);
 
     $event = $payload['event'] ?? null;
     $data = $payload['data'] ?? [];
 
     if ($event === 'charge.success') {
+
         $txRef = $data['reference'] ?? null;
+
+        if (!$txRef) {
+            Log::warning('Paystack webhook: No reference found');
+            return response()->json(['status' => 'no_reference'], 400);
+        }
+
         $payment = Payment::where('transactionReference', $txRef)->first();
 
-        if (!$payment) return response()->json(['status' => 'not_found'], 404);
+        if (!$payment) {
+            Log::warning("Payment not found for reference: {$txRef}");
+            return response()->json(['status' => 'not_found'], 404);
+        }
 
         // Verify with Paystack
-        $verify = Http::withToken(env('PAYSTACK_SECRET_KEY'))
+        $verify = Http::withToken($secret)
             ->get("https://api.paystack.co/transaction/verify/{$txRef}");
 
         if ($verify->successful() && $verify->json('data.status') === 'success') {
+
             $payment->update([
                 'status' => 'paid',
                 'paymentGateway' => 'paystack',
@@ -38,19 +71,15 @@ public function handle(Request $request)
                 'metaData' => json_encode($verify->json('data')),
             ]);
 
-            // Update property
-            // $property = Property::find($payment->propertyId);
-            // if ($property && !$property->isFeatured) {
-            //     $property->update([
-            //         'isFeatured' => true,
-            //         'featuredUntil' => now()->addDays(30),
-            //     ]);
-            // }
+            Log::info("Payment updated successfully for {$txRef}");
 
             return response()->json(['status' => 'success'], 200);
         }
+
+        Log::warning("Verification failed for {$txRef}");
     }
 
     return response()->json(['status' => 'ignored'], 200);
 }
+
 }
