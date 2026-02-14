@@ -11,6 +11,7 @@ class PaystackWebhookController extends Controller{
     
 public function handle(Request $request)
 {
+    // return "Test";
     // Paystack sends JSON with 'event' and 'data'
     $payload = $request->all();
     \Log::info('PAYSTACK WEBHOOK:', $payload);
@@ -38,13 +39,13 @@ public function handle(Request $request)
             ]);
 
             // Update property
-            $property = Property::find($payment->propertyId);
-            if ($property && !$property->isFeatured) {
-                $property->update([
-                    'isFeatured' => true,
-                    'featuredUntil' => now()->addDays(30),
-                ]);
-            }
+            // $property = Property::find($payment->propertyId);
+            // if ($property && !$property->isFeatured) {
+            //     $property->update([
+            //         'isFeatured' => true,
+            //         'featuredUntil' => now()->addDays(30),
+            //     ]);
+            // }
 
             return response()->json(['status' => 'success'], 200);
         }

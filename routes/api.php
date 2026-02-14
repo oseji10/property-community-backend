@@ -144,15 +144,16 @@ Route::post('/webhooks/flutterwave', [FlutterwaveWebhookController::class, 'hand
   
 
 });
-  Route::get('/promotion/verify-redirect', [PropertyFeatureController::class, 'handleCallback']);
+
 Route::get('/featured-plans', function(){
     $plans = \App\Models\PromotionPackages::where('promotionType', 'featured')->orderBy('packageId')->get()->makeHidden([ 'created_at', 'updated_at', 'deleted_at']);
     return response()->json($plans);
-});
-
-Route::options('{any}', function () {
-    return response()->json([], 200);
-})->where('any', '.*');
-
+    });
+    
+    Route::options('{any}', function () {
+        return response()->json([], 200);
+        })->where('any', '.*');
+        
+Route::get('/promotion/verify-redirect', [PropertyFeatureController::class, 'handleCallback']);
 Route::post('/webhooks/flutterwave', [FlutterwaveWebhookController::class, 'handle']);
 Route::post('/webhooks/paystack', [PaystackWebhookController::class, 'handle']);

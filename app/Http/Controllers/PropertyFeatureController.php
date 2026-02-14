@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Damms005\LaravelFlutterwave\Facades\Flutterwave;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 
 class PropertyFeatureController extends Controller
@@ -97,6 +98,8 @@ public function initiatePayment(Request $request, $slug)
                 'propertyId' => $property->propertyId,
             ],
         ]);
+       
+
 
     if ($response->successful()) {
         $payment = Payment::create([
@@ -205,7 +208,7 @@ public function initiatePayment(Request $request, $slug)
 
 public function handleCallback(Request $request)
 {
-   $txRef = $request->query('trxref');
+    $txRef = $request->query('trxref');
     $payment = Payment::where('transactionReference', $txRef)->first();
     $frontend_url = env('FRONTEND_URL');
     if (!$payment) return redirect("{$frontend_url}/properties/view/?slug={$payment->property->slug}&payment=error");
@@ -214,7 +217,7 @@ public function handleCallback(Request $request)
         return redirect("{$frontend_url}/properties/view/?slug={$payment->property->slug}&payment=success");
     }
 
-    return redirect("{$frontend_url}/properties/view/slug?={$payment->property->slug}&payment=pending");
+    return redirect("{$frontend_url}/properties/view/?slug={$payment->property->slug}&payment=pending");
 }
 
 
