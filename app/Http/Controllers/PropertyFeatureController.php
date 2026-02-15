@@ -16,7 +16,7 @@ class PropertyFeatureController extends Controller
 {
 
 
-public function initiatePaymentFlutter(Request $request, $slug)
+public function initiatePayment(Request $request, $slug)
     {
        $property = Property::where('slug', $slug)
         ->where('addedBy', auth()->id())
@@ -29,7 +29,6 @@ public function initiatePaymentFlutter(Request $request, $slug)
     }
 
     $txRef = 'feat-' . Str::random(12) . '-' . time();
-// $ngrokUrl = 'https://otiosely-chronological-cari.ngrok-free.dev'; // Your ngrok URL
         $secretKey = env('FLUTTERWAVE_SECRET_KEY');
         $response = Http::withHeaders(['Authorization' => "Bearer $secretKey"])
             ->post('https://api.flutterwave.com/v3/payments', [
@@ -55,7 +54,7 @@ public function initiatePaymentFlutter(Request $request, $slug)
         if ($response->successful()) {
               $payment = Payment::create([
                 'propertyId' => $property->propertyId,
-                'amount' => 4000,
+                'amount' => $promotion_package->price,
                 'status' => 'pending',
                 'transactionReference' => $txRef,
                 'userId' => auth()->user()->id,
@@ -74,50 +73,50 @@ public function initiatePaymentFlutter(Request $request, $slug)
     }
 
 
-public function initiatePayment(Request $request, $slug)
-{
-    $property = Property::where('slug', $slug)
-        ->where('addedBy', auth()->id())
-        ->firstOrFail();
+// public function initiatePayment(Request $request, $slug)
+// {
+//     $property = Property::where('slug', $slug)
+//         ->where('addedBy', auth()->id())
+//         ->firstOrFail();
 
-    $promotion_package = PromotionPackages::where('packageId', $request->planId)->first();
+//     $promotion_package = PromotionPackages::where('packageId', $request->planId)->first();
 
-    if ($property->isFeatured) {
-        return response()->json(['message' => 'Already featured'], 400);
-    }
+//     if ($property->isFeatured) {
+//         return response()->json(['message' => 'Already featured'], 400);
+//     }
 
-    $txRef = 'feat-' . Str::random(12) . '-' . time();
+//     $txRef = 'feat-' . Str::random(12) . '-' . time();
 
-    $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))
-        ->post('https://api.paystack.co/transaction/initialize', [
-            'email' => $property->owner->email,
-            'amount' => $promotion_package->price * 100, // Paystack uses kobo
-            'reference' => $txRef,
-            'callback_url' => env('APP_URL') . '/api/promotion/verify-redirect',
-            'metadata' => [
-                'propertyId' => $property->propertyId,
-            ],
-        ]);
+//     $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))
+//         ->post('https://api.paystack.co/transaction/initialize', [
+//             'email' => $property->owner->email,
+//             'amount' => $promotion_package->price * 100, // Paystack uses kobo
+//             'reference' => $txRef,
+//             'callback_url' => env('APP_URL') . '/api/promotion/verify-redirect',
+//             'metadata' => [
+//                 'propertyId' => $property->propertyId,
+//             ],
+//         ]);
        
 
 
-    if ($response->successful()) {
-        $payment = Payment::create([
-            'propertyId' => $property->propertyId,
-            'amount' => $promotion_package->price,
-            'status' => 'pending',
-            'transactionReference' => $txRef,
-            'userId' => auth()->user()->id,
-        ]);
+//     if ($response->successful()) {
+//         $payment = Payment::create([
+//             'propertyId' => $property->propertyId,
+//             'amount' => $promotion_package->price,
+//             'status' => 'pending',
+//             'transactionReference' => $txRef,
+//             'userId' => auth()->user()->id,
+//         ]);
 
-        return response()->json([
-            'success' => true,
-            'payment_link' => $response->json('data.authorization_url')
-        ]);
-    }
+//         return response()->json([
+//             'success' => true,
+//             'payment_link' => $response->json('data.authorization_url')
+//         ]);
+//     }
 
-    return response()->json(['error' => 'Failed to initiate payment'], 500);
-}
+//     return response()->json(['error' => 'Failed to initiate payment'], 500);
+// }
 
 
     // Callback handler (after redirect from Flutterwave)
@@ -185,31 +184,11 @@ public function initiatePayment(Request $request, $slug)
 // }
 
 
-// public function handleCallback(Request $request)
-// {
-//     $tx_ref = $request->query('tx_ref');
-
-//     // Fetch the payment record
-//     $payment = Payment::where('transactionReference', $tx_ref)->first();
-
-//     if (!$payment) {
-//     return redirect('/dashboard?payment=error');
-// }
-
-// if ($payment->status === 'paid') {
-//     return redirect("/dashboard/properties/{$property->slug}?payment=success");
-// }
-
-// // Payment is still pending
-// return redirect("/dashboard/properties/{$property->slug}?payment=pending");
-
-// }
-
-
 public function handleCallback(Request $request)
 {
-    $txRef = $request->query('trxref');
-    $payment = Payment::where('transactionReference', $txRef)->first();
+      $txRef = $request->tx_ref;
+    //  $txRef = $request->query('trx_ref');
+     $payment = Payment::where('transactionReference', $txRef)->first();
     $frontend_url = env('FRONTEND_URL');
     if (!$payment) return redirect("{$frontend_url}/properties/view/?slug={$payment->property->slug}&payment=error");
 
@@ -219,6 +198,21 @@ public function handleCallback(Request $request)
 
     return redirect("{$frontend_url}/properties/view/?slug={$payment->property->slug}&payment=pending");
 }
+
+
+// public function handleCallback(Request $request)
+// {
+//     $txRef = $request->query('trxref');
+//     $payment = Payment::where('transactionReference', $txRef)->first();
+//     $frontend_url = env('FRONTEND_URL');
+//     if (!$payment) return redirect("{$frontend_url}/properties/view/?slug={$payment->property->slug}&payment=error");
+
+//     if ($payment->status === 'paid') {
+//         return redirect("{$frontend_url}/properties/view/?slug={$payment->property->slug}&payment=success");
+//     }
+
+//     return redirect("{$frontend_url}/properties/view/?slug={$payment->property->slug}&payment=pending");
+// }
 
 
 

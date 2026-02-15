@@ -28,4 +28,9 @@ class Payment extends Model
     {
         return $this->belongsTo(PaymentType::class, 'paymentFor', 'paymentTypeId'); 
     }
+
+    // public function property()
+    // {
+    //     return $this->belongsTo(Property::class, 'propertyId', 'propertyId'); 
+    // }
 }

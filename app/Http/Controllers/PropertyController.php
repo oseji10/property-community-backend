@@ -157,8 +157,8 @@ public function store(Request $request)
     public function myProperties()
     {
         $user = auth()->user();
-        $properties = Property::with('images', 'currency')->get();
-        // $properties = Property::where('addedBy', $user->id)->with('images','currency')->latest()->paginate(10);
+        // $properties = Property::with('images', 'currency')->get();
+        $properties = Property::where('addedBy', $user->id)->with('images','currency')->get();
         return response()->json($properties);
     }
 
