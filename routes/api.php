@@ -138,13 +138,13 @@ Route::get('/properties/feature/callback', [PropertyFeatureController::class, 'h
     ->name('feature.callback');
 
 // Webhook (Flutterwave → your server)
-Route::post('/webhooks/flutterwave', [FlutterwaveWebhookController::class, 'handle'])
-    ->name('flutterwave.webhook');
+// Route::post('/webhooks/flutterwave', [FlutterwaveWebhookController::class, 'handle'])
+//     ->name('flutterwave.webhook');
 
-  
 
 });
 
+Route::get('/featured-properties', [PropertyController::class, 'featuredProperties']);
 Route::get('/featured-plans', function(){
     $plans = \App\Models\PromotionPackages::where('promotionType', 'featured')->orderBy('packageId')->get()->makeHidden([ 'created_at', 'updated_at', 'deleted_at']);
     return response()->json($plans);

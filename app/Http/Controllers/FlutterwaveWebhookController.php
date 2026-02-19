@@ -4,15 +4,24 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Payment;
+use App\Models\Property;
+use Illuminate\Support\Facades\Http;
 class FlutterwaveWebhookController extends Controller
 {
-   public function handle(Request $request)
+  
+
+public function handle(Request $request)
 {
     $payload = $request->all();
         \Log::info('WEBHOOK RECEIVED:', $request->all());
 
-    $tx_ref = $payload['data']['tx_ref'] ?? null;
-    $transaction_id = $payload['data']['id'] ?? null;
+    // $tx_ref = $payload['data']['tx_ref'] ?? null;
+    // $transaction_id = $payload['data']['id'] ?? null;
+    $tx_ref = $payload['txRef'] ?? null;
+    \Log::info('TRX_ID: ' . $tx_ref);
+
+    $transaction_id = $payload['id'] ?? null;
+
 
     if (!$tx_ref || !$transaction_id) {
         return response()->json(['status' => 'error'], 400);

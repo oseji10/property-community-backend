@@ -22,31 +22,28 @@ use Illuminate\Support\Facades\Cache;
 
 class PropertyController extends Controller
 {
-    public function index(Request $request)
+public function index(Request $request)
 {
-    $query = Property::query()->where('isAvailable', true);
-
-    // Eager load relations
-    $query->with('images', 'owner', 'currency', 'property_type');
+    $query = Property::query()
+        ->where('isAvailable', true)
+        ->with('images', 'owner', 'currency', 'property_type');
 
     // Filters
-   if ($request->filled('type')) {
-    $type = strtolower($request->type);
+    if ($request->filled('type')) {
+        $type = strtolower($request->type);
 
-    // Map frontend values to DB values if needed
-    if ($type === 'buy' || $type === 'sale') {
-        $type = 'sale';
-    } elseif ($type === 'rent') {
-        $type = 'rent';
-    } else {
-        $type = null; // ignore invalid types
+        if ($type === 'buy' || $type === 'sale') {
+            $type = 'sale';
+        } elseif ($type === 'rent') {
+            $type = 'rent';
+        } else {
+            $type = null;
+        }
+
+        if ($type) {
+            $query->where('listingType', $type);
+        }
     }
-
-    if ($type) {
-        $query->where('listingType', $type); // column in DB
-    }
-}
-
 
     if ($request->filled('location')) {
         $location = $request->location;
@@ -73,9 +70,41 @@ class PropertyController extends Controller
         $query->where('bedrooms', $request->beds);
     }
 
-    // Latest properties first, paginate 10 per page
-    $properties = $query->latest()->paginate(10);
+    // 🔥 KEY PART: Featured first (not expired), then latest
+    $query->orderByRaw("
+        CASE 
+            WHEN isFeatured = 1 
+                 AND featuredUntil IS NOT NULL 
+                 AND featuredUntil >= NOW()
+            THEN 0
+            ELSE 1
+        END
+    ")
+    ->latest(); // created_at DESC inside each group
 
+    $properties = $query->paginate(10);
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $properties,
+    ]);
+}
+
+
+   public function featuredProperties(Request $request)
+{
+    
+    $query = Property::query()
+        ->where('isAvailable', true)
+        ->where('isFeatured', true)
+        ->whereNotNull('featuredUntil')
+        ->where('featuredUntil', '>=', now()); // not expired
+
+
+    // Eager load relations
+    $query->with('images', 'owner', 'currency', 'property_type');
+
+    $properties = $query->latest()->paginate(30);
     return response()->json([
         'status' => 'success',
         'data' => $properties,
