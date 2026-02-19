@@ -35,8 +35,8 @@ public function initiatePayment(Request $request, $slug)
                 'tx_ref' => $txRef,
                 'amount' => $promotion_package->price, // Overridden by plan, but include for initial charge
                 'currency' => 'NGN',
-                // 'redirect_url' => env('APP_URL') . '/api/promotion/verify-redirect',
-                'redirect_url' => 'https://nonnationalistic-unbloodily-moon.ngrok-free.dev/api/promotion/verify-redirect',
+                'redirect_url' => env('APP_URL') . '/api/promotion/verify-redirect',
+                // 'redirect_url' => 'https://nonnationalistic-unbloodily-moon.ngrok-free.dev/api/promotion/verify-redirect',
                 'customer' => [
                     'email' => $property->owner->email,
                     'name' => $property->owner->firstName . ' ' . $property->owner->lastName,
