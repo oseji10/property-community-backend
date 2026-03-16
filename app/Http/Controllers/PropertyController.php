@@ -26,7 +26,8 @@ public function index(Request $request)
 {
     $query = Property::query()
         ->where('isAvailable', true)
-        ->with('images', 'owner', 'currency', 'property_type');
+        ->with('images', 'owner', 'currency', 'property_type')
+        ->orderBy('created_at', 'desc'); // default order by latest
 
     // Filters
     if ($request->filled('type')) {
@@ -187,7 +188,9 @@ public function store(Request $request)
     {
         $user = auth()->user();
         // $properties = Property::with('images', 'currency')->get();
-        $properties = Property::where('addedBy', $user->id)->with('images','currency')->get();
+        $properties = Property::where('addedBy', $user->id)->with('images','currency')
+        ->orderBy('created_at', 'desc')
+        ->get();
         return response()->json($properties);
     }
 
