@@ -204,6 +204,35 @@ public function store(Request $request)
     //     return response()->json($property);
     // }
 
+
+    public function rate(Request $request, string $slug)
+{
+    $user = auth()->user();
+    $request->validate(['rating' => 'required|integer|min:1|max:5']);
+
+    $property = Property::where('slug', $slug)->firstOrFail();
+
+    // Upsert — update if already rated, insert if not
+    $property->ratings()->updateOrCreate(
+        ['userId' => $user->id],
+        ['rating'  => $request->rating]
+    );
+
+    $averageRating = round($property->ratings()->avg('rating'), 1);
+    $totalRatings  = $property->ratings()->count();
+
+    // Optionally cache on the property row for fast reads
+    $property->update([
+        'average_rating' => $averageRating,
+        'total_ratings'  => $totalRatings,
+    ]);
+
+    return response()->json([
+        'data' => compact('averageRating', 'totalRatings'),
+    ]);
+}
+
+
     public function show(Request $request, $slug)
 {
     $property = Property::where('slug', $slug)

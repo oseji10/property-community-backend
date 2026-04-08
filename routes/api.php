@@ -29,6 +29,7 @@ use App\Http\Controllers\SessionController;
 use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseTypeController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\FavoriteController;
 
@@ -76,10 +77,27 @@ use App\Http\Controllers\FavoriteController;
                 'otherNames' => $user->otherNames,
                 'email' => $user->email,
                 'role' => $user->role,
+                'roleName' => $user->user_role,
                 'id' => $user->id,
                 'message' => 'User authenticated successfully',
             ]);
         });
+
+
+                Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+
+    // Admin-only user management
+    Route::middleware('role:3')->group(function () {
+        Route::get('/users', [UsersController::class, 'index']);
+        Route::post('/users', [UsersController::class, 'store']);
+        Route::put('/users/{user}', [UsersController::class, 'update']);
+        Route::delete('/users/{user}', [UsersController::class, 'destroy']);
+        Route::patch('/users/{user}/status', [UsersController::class, 'updateStatus']);
+        Route::get('/users/{user}/properties', [UsersController::class, 'properties']);
+    });
+
+        Route::post('/properties/{slug}/rate', [PropertyController::class, 'rate']);
+    
 
     Route::get('/currencies', function (){
         $currencies = \App\Models\Currency::all();

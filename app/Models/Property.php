@@ -45,6 +45,11 @@ class Property extends Model
 
 
 
+    public function ratings()
+    {
+        return $this->hasMany(PropertyRating::class, 'propertyId');
+    }
+
     public function owner()
     {
         return $this->belongsTo(User::class, 'addedBy', 'id');
