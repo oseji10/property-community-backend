@@ -87,14 +87,14 @@ use App\Http\Controllers\FavoriteController;
                 Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
     // Admin-only user management
-    Route::middleware('role:3')->group(function () {
+    // Route::middleware('role:3')->group(function () {
         Route::get('/users', [UsersController::class, 'index']);
         Route::post('/users', [UsersController::class, 'store']);
         Route::put('/users/{user}', [UsersController::class, 'update']);
         Route::delete('/users/{user}', [UsersController::class, 'destroy']);
         Route::patch('/users/{user}/status', [UsersController::class, 'updateStatus']);
         Route::get('/users/{user}/properties', [UsersController::class, 'properties']);
-    });
+    // });
 
         Route::post('/properties/{slug}/rate', [PropertyController::class, 'rate']);
     
@@ -119,7 +119,8 @@ use App\Http\Controllers\FavoriteController;
 
     // Route::get('/property-types', [PropertyController::class, 'propertyType']);
     Route::post('/properties', [PropertyController::class, 'store']);
-    
+        Route::get('/{id}/properties', [UsersController::class, 'properties']);
+
     Route::get('/properties/my', [PropertyController::class, 'myProperties']);
     Route::get('/properties/{slug}', [PropertyController::class, 'show']);
     // Route::put('/properties/{slug}', [PropertyController::class, 'update']);
@@ -159,6 +160,42 @@ Route::get('/properties/feature/callback', [PropertyFeatureController::class, 'h
 // Route::post('/webhooks/flutterwave', [FlutterwaveWebhookController::class, 'handle'])
 //     ->name('flutterwave.webhook');
 
+
+    // Get all properties (admin view)
+    // Route::get('/properties', [PropertyController::class, 'adminIndex']);
+    
+    // // Get revenue analytics
+    // Route::get('/revenue', [PropertyController::class, 'adminRevenue']);
+    
+    // // Get analytics stats
+    // Route::get('/analytics/stats', [PropertyController::class, 'adminStats']);
+    
+    // // Approve/Reject property
+    // Route::patch('/properties/{slug}/approve', [PropertyController::class, 'approveProperty']);
+    
+    // // Feature/Unfeature property
+    // Route::patch('/properties/{slug}/feature', [PropertyController::class, 'featureProperty']);
+    
+    // // Delete any property (admin)
+    // Route::delete('/properties/{slug}', [PropertyController::class, 'adminDestroy']);
+
+
+        Route::get('/properties', [PropertyController::class, 'adminIndex']);
+    
+    // Get revenue analytics
+    Route::get('/revenue', [PropertyController::class, 'adminRevenue']);
+    
+    // Get analytics stats
+    Route::get('/analytics/stats', [PropertyController::class, 'adminStats']);
+    
+    // Approve/Reject property
+    Route::patch('/properties/{slug}/approve', [PropertyController::class, 'approveProperty']);
+    
+    // Feature/Unfeature property
+    Route::patch('/properties/{slug}/feature', [PropertyController::class, 'featureProperty']);
+    
+    // Delete any property (admin)
+    Route::delete('/properties/{slug}', [PropertyController::class, 'adminDestroy']);
 
 });
 

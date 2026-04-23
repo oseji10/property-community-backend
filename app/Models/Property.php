@@ -104,6 +104,75 @@ public function favoritedBy()
     )
     ->withTimestamps();
 }
+
+
+
+
+    /**
+     * Indicates if the model should use snake_case for attributes.
+     * Set to false to prevent Laravel from converting userId to user_id
+     */
+    public static $snakeAttributes = false;
+
+   
+
+
+    /**
+     * The attributes that should be cast.
+     */
+    protected $casts = [
+        'price' => 'decimal:2',
+        'propertyId' => 'integer',
+        'currencyId' => 'integer',
+    ];
+
+    /**
+     * Get the user that owns the property
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'userId', 'id');
+    }
+
+ 
+
+
+
+    /**
+     * Get the promotion package for this property
+     */
+    public function promotionPackage()
+    {
+        return $this->belongsTo(PromotionPackage::class, 'promotionPackageId', 'packageId');
+    }
+
+
+
+
+    /**
+     * Scope to filter by listing type
+     */
+    public function scopeForSale($query)
+    {
+        return $query->where('listingType', 'sale');
+    }
+
+    /**
+     * Scope to filter by listing type
+     */
+    public function scopeForRent($query)
+    {
+        return $query->where('listingType', 'rent');
+    }
+
+    /**
+     * Scope to filter by status
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
 }
 
 

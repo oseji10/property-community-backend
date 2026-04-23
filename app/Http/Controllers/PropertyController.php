@@ -20,6 +20,9 @@ use Illuminate\Support\Facades\Cache;
 
 
 
+use Illuminate\Support\Facades\DB;
+
+
 class PropertyController extends Controller
 {
 public function index(Request $request)
@@ -413,4 +416,347 @@ public function store(Request $request)
         return response()->json($property);
     }
 
+
+    public function adminIndex(Request $request)
+    {
+        // Check if user is admin (role = 3)
+        $user = auth()->user();
+        if (!$user || $user->role !== 3) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin access required.'
+            ], 403);
+        }
+ 
+        $query = Property::query()
+            ->with(['images', 'owner', 'currency', 'property_type'])
+            ->orderBy('created_at', 'desc');
+ 
+        // Filters
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+ 
+        if ($request->filled('isAvailable')) {
+            $query->where('isAvailable', $request->boolean('isAvailable'));
+        }
+ 
+        if ($request->filled('isFeatured')) {
+            $query->where('isFeatured', $request->boolean('isFeatured'));
+        }
+ 
+        if ($request->filled('listingType')) {
+            $query->where('listingType', $request->listingType);
+        }
+ 
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('propertyTitle', 'like', "%{$search}%")
+                  ->orWhere('city', 'like', "%{$search}%")
+                  ->orWhere('state', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+ 
+        if ($request->filled('userId')) {
+            $query->where('addedBy', $request->userId);
+        }
+ 
+        $properties = $query->paginate($request->get('per_page', 20));
+ 
+        return response()->json([
+            'status' => 'success',
+            'data' => $properties,
+        ]);
+    }
+ 
+    /**
+     * Get revenue analytics for admin
+     * GET /api/admin/revenue
+     */
+    public function adminRevenue(Request $request)
+    {
+        // Check if user is admin (role = 3)
+        $user = auth()->user();
+        if (!$user || $user->role !== 3) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin access required.'
+            ], 403);
+        }
+ 
+        // Date range filter (default: last 30 days)
+        $startDate = $request->filled('start_date') 
+            ? Carbon::parse($request->start_date) 
+            : Carbon::now()->subDays(30);
+        
+        $endDate = $request->filled('end_date') 
+            ? Carbon::parse($request->end_date) 
+            : Carbon::now();
+ 
+        // Total properties
+        $totalProperties = Property::count();
+        $activeListings = Property::where('isAvailable', true)->count();
+        $featuredProperties = Property::where('isFeatured', true)
+            ->whereNotNull('featuredUntil')
+            ->where('featuredUntil', '>=', now())
+            ->count();
+ 
+        // Revenue from promotion packages
+        $promotionRevenue = Property::whereNotNull('promotionPackageId')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->with('promotionPackage')
+            ->get()
+            ->sum(function($property) {
+                return $property->promotionPackage ? $property->promotionPackage->price : 0;
+            });
+ 
+        // Total property value (sum of all property prices)
+        $totalPropertyValue = Property::where('isAvailable', true)->sum('price');
+ 
+        // Revenue by listing type
+        $revenueByType = Property::select('listingType', DB::raw('COUNT(*) as count'), DB::raw('SUM(price) as total_value'))
+            ->where('isAvailable', true)
+            ->groupBy('listingType')
+            ->get();
+ 
+        // Revenue by property type
+        $revenueByPropertyType = Property::select('propertyTypeId', DB::raw('COUNT(*) as count'), DB::raw('SUM(price) as total_value'))
+            ->with('property_type')
+            ->where('isAvailable', true)
+            ->groupBy('propertyTypeId')
+            ->get();
+ 
+        // Revenue by location (top cities)
+        $revenueByCity = Property::select('city', DB::raw('COUNT(*) as count'), DB::raw('SUM(price) as total_value'))
+            ->where('isAvailable', true)
+            ->whereNotNull('city')
+            ->groupBy('city')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get();
+ 
+        // Monthly revenue trend (properties listed per month)
+        $monthlyTrend = Property::select(
+                DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(price) as total_value')
+            )
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+ 
+        // Top earning agents/owners
+        $topAgents = Property::select('addedBy', DB::raw('COUNT(*) as properties_count'), DB::raw('SUM(price) as total_value'))
+            ->with(['owner' => function($query) {
+                $query->select('id', 'firstName', 'lastName', 'email', 'role');
+            }])
+            ->where('isAvailable', true)
+            ->groupBy('addedBy')
+            ->orderByDesc('total_value')
+            ->limit(10)
+            ->get();
+ 
+        // Average property price
+        $averagePrice = Property::where('isAvailable', true)->avg('price');
+ 
+        // Properties added in date range
+        $newProperties = Property::whereBetween('created_at', [$startDate, $endDate])->count();
+ 
+        // Promotion packages usage
+        $promotionPackages = DB::table('properties_promotion_packages as pp')
+            ->leftJoin('properties as p', 'p.promotionPackageId', '=', 'pp.packageId')
+            ->select('pp.packageId', 'pp.packageName', 'pp.price', DB::raw('COUNT(p.propertyId) as usage_count'), DB::raw('SUM(pp.price) as total_revenue'))
+            ->groupBy('pp.packageId', 'pp.packageName', 'pp.price')
+            ->get();
+ 
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'summary' => [
+                    'total_properties' => $totalProperties,
+                    'active_listings' => $activeListings,
+                    'featured_properties' => $featuredProperties,
+                    'promotion_revenue' => round($promotionRevenue, 2),
+                    'total_property_value' => round($totalPropertyValue, 2),
+                    'average_price' => round($averagePrice, 2),
+                    'new_properties' => $newProperties,
+                ],
+                'revenue_by_type' => $revenueByType,
+                'revenue_by_property_type' => $revenueByPropertyType,
+                'revenue_by_city' => $revenueByCity,
+                'monthly_trend' => $monthlyTrend,
+                'top_agents' => $topAgents,
+                'promotion_packages' => $promotionPackages,
+                'date_range' => [
+                    'start' => $startDate->format('Y-m-d'),
+                    'end' => $endDate->format('Y-m-d'),
+                ],
+            ],
+        ]);
+    }
+ 
+    /**
+     * Get analytics dashboard stats for admin
+     * GET /api/admin/analytics/stats
+     */
+    public function adminStats(Request $request)
+    {
+        // Check if user is admin (role = 3)
+        $user = auth()->user();
+        if (!$user || $user->role !== 3) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin access required.'
+            ], 403);
+        }
+ 
+        // Calculate promotion revenue
+        $promotionRevenue = Property::whereNotNull('promotionPackageId')
+            ->with('promotionPackage')
+            ->get()
+            ->sum(function($property) {
+                return $property->promotionPackage ? $property->promotionPackage->price : 0;
+            });
+ 
+        $stats = [
+            'total_properties' => Property::count(),
+            'active_listings' => Property::where('isAvailable', true)->count(),
+            'pending_approvals' => Property::where('status', 'pending')->count(),
+            'featured_properties' => Property::where('isFeatured', true)
+                ->whereNotNull('featuredUntil')
+                ->where('featuredUntil', '>=', now())
+                ->count(),
+            'total_views' => Property::sum('views'),
+            'properties_for_sale' => Property::where('listingType', 'sale')->where('isAvailable', true)->count(),
+            'properties_for_rent' => Property::where('listingType', 'rent')->where('isAvailable', true)->count(),
+            'total_revenue' => round($promotionRevenue, 2),
+        ];
+ 
+        return response()->json([
+            'status' => 'success',
+            'data' => $stats,
+        ]);
+    }
+ 
+    /**
+     * Admin: Approve/Reject property
+     * PATCH /api/admin/properties/{slug}/approve
+     */
+    public function approveProperty(Request $request, $slug)
+    {
+        $user = auth()->user();
+        if (!$user || $user->role !== 3) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin access required.'
+            ], 403);
+        }
+ 
+        $property = Property::where('slug', $slug)->first();
+        if (!$property) {
+            return response()->json(['message' => 'Property not found'], 404);
+        }
+ 
+        $validated = $request->validate([
+            'status' => 'required|in:active,pending,sold,rented',
+            'reason' => 'nullable|string',
+        ]);
+ 
+        $property->update([
+            'status' => $validated['status'],
+            'isAvailable' => $validated['status'] === 'active',
+        ]);
+ 
+        // TODO: Send notification to property owner about approval/rejection
+ 
+        return response()->json([
+            'message' => 'Property status updated successfully',
+            'property' => $property,
+        ]);
+    }
+ 
+    /**
+     * Admin: Feature/Unfeature property with promotion package
+     * PATCH /api/admin/properties/{slug}/feature
+     */
+    public function featureProperty(Request $request, $slug)
+    {
+        $user = auth()->user();
+        if (!$user || $user->role !== 3) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin access required.'
+            ], 403);
+        }
+ 
+        $property = Property::where('slug', $slug)->first();
+        if (!$property) {
+            return response()->json(['message' => 'Property not found'], 404);
+        }
+ 
+        $validated = $request->validate([
+            'isFeatured' => 'required|boolean',
+            'featuredUntil' => 'nullable|date',
+            'promotionPackageId' => 'nullable|exists:properties_promotion_packages,packageId',
+        ]);
+ 
+        // Get duration from promotion package if provided
+        $featuredUntil = null;
+        if ($validated['isFeatured']) {
+            if ($validated['promotionPackageId']) {
+                $package = DB::table('properties_promotion_packages')
+                    ->where('packageId', $validated['promotionPackageId'])
+                    ->first();
+                
+                if ($package && $package->durationDays) {
+                    $featuredUntil = Carbon::now()->addDays($package->durationDays);
+                }
+            } elseif (isset($validated['featuredUntil'])) {
+                $featuredUntil = $validated['featuredUntil'];
+            } else {
+                $featuredUntil = Carbon::now()->addDays(30); // Default 30 days
+            }
+        }
+ 
+        $property->update([
+            'isFeatured' => $validated['isFeatured'],
+            'featuredUntil' => $featuredUntil,
+            'promotionPackageId' => $validated['promotionPackageId'] ?? null,
+        ]);
+ 
+        return response()->json([
+            'message' => $validated['isFeatured'] ? 'Property featured successfully' : 'Property unfeatured successfully',
+            'property' => $property->load('promotionPackage'),
+        ]);
+    }
+ 
+    /**
+     * Admin: Delete any property
+     * DELETE /api/admin/properties/{slug}
+     */
+    public function adminDestroy($slug)
+    {
+        $user = auth()->user();
+        if (!$user || $user->role !== 3) {
+            return response()->json([
+                'message' => 'Unauthorized. Admin access required.'
+            ], 403);
+        }
+ 
+        $property = Property::where('slug', $slug)->first();
+        if (!$property) {
+            return response()->json(['message' => 'Property not found'], 404);
+        }
+ 
+        // Delete associated images from storage
+        foreach ($property->images as $image) {
+            Storage::disk('public')->delete($image->imageUrl);
+        }
+ 
+        // Delete images from database
+        $property->images()->delete();
+ 
+        // Delete property
+        $property->delete();
+ 
+        return response()->json(['message' => 'Property deleted successfully']);
+    }
 }

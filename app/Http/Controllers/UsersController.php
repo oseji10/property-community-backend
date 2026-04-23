@@ -4,177 +4,300 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Models\Staff; 
-use App\Models\StaffType;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use App\Mail\WelcomeEmail;
 use Illuminate\Support\Facades\Mail;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
-use App\Models\Lgas;
+use Illuminate\Validation\Rule;
+
 class UsersController extends Controller
 {
-    public function index()
+    /**
+     * Get all users
+     * GET /api/users
+     */
+    public function index(): JsonResponse
     {
-        $users = User::with('staff.staff_type')->get();
-        return response()->json($users);
-       
-    }
-public function admins(Request $request)
-{
-    $perPage = $request->query('per_page', 10);
-    $role = $request->query('role');
-    $search = $request->query('search');
-
-    $query = User::whereIn('role', [2, 3, 4])->with('user_role'); // Combine roles
-
-    if ($role) {
-        $query->where('role', $role);
-    }
-
-    if ($search) {
-        $query->where(function ($q) use ($search) {
-            $q->where('firstName', 'like', "%$search%")
-              ->orWhere('lastName', 'like', "%$search%")
-              ->orWhere('email', 'like', "%$search%")
-              ->orWhere('phoneNumber', 'like', "%$search%");
-        });
-    }
-
-    $users = $query->paginate($perPage);
-
-    return response()->json($users);
-}
-
-
-  public function supervisors()
-{
-    $users = User::with('staff.staff_type')
-        ->whereHas('staff', function ($query) {
-            $query->where('staffType', 3);
-        })
-        ->get();
-
-    return response()->json($users);
-}
-
-
-    public function staff_type()
-    {
-        $staffTypes = StaffType::all();
-        return response()->json($staffTypes);
-       
-    }
-
-public function store(Request $request)
-{
-    // 1. Validate input
-    $validatedData = $request->validate([
-        'firstName'   => 'required|string|max:255',
-        'lastName'    => 'required|string|max:255',
-        'otherNames'  => 'nullable|string|max:255',
-        'phoneNumber' => 'nullable|string|max:20',
-        'email'       => 'nullable|email|max:255|unique:users,email',
-        'password' => 'nullable|string|min:6',
-        'roleId'      => 'required|exists:roles,roleId',
-    ]);
-
-    // 2. Generate default password
-    $default_password = strtoupper(Str::random(2)) . mt_rand(1000000000, 9999999999);
-    if ($request->filled('password')) {
-        $default_password = $request->input('password');
-    }
-    // 3. Create user
-    $user = User::create([
-        'firstName'   => $validatedData['firstName'],
-        'lastName'    => $validatedData['lastName'],
-        'otherNames'  => $validatedData['otherNames'] ?? null,
-        'phoneNumber' => $validatedData['phoneNumber'] ?? null,
-        'email'       => $validatedData['email'] ?? null,
-        'password'    => Hash::make($default_password),
-        'role'        => $validatedData['roleId'],
-    ]);
-
-    Log::info('User created:', ['email' => $user->email]);
-
-    // 4. Queue the welcome email
-    if ($user->email) {
         try {
-            Mail::to($user->email)->send(new WelcomeEmail(
-                $user->firstName,
-                $user->lastName,
-                $user->email,
-                $default_password
-            ));
-            Log::info('Welcome email queued for ' . $user->email);
+            $users = User::with('user_role')->get();
+            
+            return response()->json([
+                'data' => $users
+            ], 200);
         } catch (\Exception $e) {
-            Log::error('Failed to queue welcome email: ' . $e->getMessage());
+            Log::error('Error fetching users: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to fetch users'
+            ], 500);
         }
     }
 
-    // 5. Load role relationship
-    $user->load('user_role');
-
-    // 6. Return response
-    return response()->json([
-        'message'     => 'User successfully created',
-        'password'    => $default_password,
-        'firstName'   => $user->firstName,
-        'lastName'    => $user->lastName,
-        'otherNames'  => $user->otherNames,
-        'phoneNumber' => $user->phoneNumber,
-        'email'       => $user->email,
-        'role'        => $user->user_role->roleName,
-        'id'          => $user->id,
-    ], 201);
-}
-
-
-    
-        public function update(Request $request, $staffId)  
-{
-        $staff = Staff::find($staffId);
-        if (!$staff) {
-            return response()->json(['message' => 'Staff not found'], 404);
-        }
-
-        $staff->update($request->all());
-        return response()->json($staff);
-    }
-
-       public function destroy($userId)
+    /**
+     * Create a new user
+     * POST /api/users
+     */
+    public function store(Request $request): JsonResponse
     {
-        $user = User::find($userId);
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
+        try {
+            // Validate input
+            $validatedData = $request->validate([
+                'firstName'   => 'required|string|max:255',
+                'lastName'    => 'required|string|max:255',
+                'otherNames'  => 'nullable|string|max:255',
+                'phoneNumber' => 'nullable|string|max:20',
+                'email'       => 'required|email|max:255|unique:users,email',
+                'password'    => 'required|string|min:6',
+                'role'        => 'required|integer|in:1,2,3,4', // 1=USER, 2=AGENT, 3=ADMIN, 4=OWNER
+                'status'      => 'nullable|string|in:active,inactive,suspended,pending',
+            ]);
 
-        $user->delete();
-        return response()->json(['message' => 'User deleted successfully']);
+            // Create user in a transaction
+            $user = DB::transaction(function () use ($validatedData, $request) {
+                $user = User::create([
+                    'firstName'   => $validatedData['firstName'],
+                    'lastName'    => $validatedData['lastName'],
+                    'otherNames'  => $validatedData['otherNames'] ?? null,
+                    'phoneNumber' => $validatedData['phoneNumber'] ?? null,
+                    'email'       => $validatedData['email'],
+                    'password'    => Hash::make($validatedData['password']),
+                    'role'        => $validatedData['role'],
+                    'status'      => $validatedData['status'] ?? 'active',
+                ]);
+
+                return $user;
+            });
+
+            Log::info('User created:', ['email' => $user->email, 'id' => $user->id]);
+
+            // Queue welcome email
+            if ($user->email) {
+                try {
+                    Mail::to($user->email)->send(new WelcomeEmail(
+                        $user->firstName,
+                        $user->lastName,
+                        $user->email,
+                        $validatedData['password']
+                    ));
+                    Log::info('Welcome email queued for ' . $user->email);
+                } catch (\Exception $e) {
+                    Log::error('Failed to queue welcome email: ' . $e->getMessage());
+                }
+            }
+
+            // Load role relationship
+            $user->load('user_role');
+
+            return response()->json([
+                'message' => 'User created successfully',
+                'data'    => $user
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors'  => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error creating user: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to create user'
+            ], 500);
+        }
     }
 
-//    public function destroy($id): JsonResponse
-//     {
-//         return DB::transaction(function () use ($id) {
-//             // Find the user
-//             $user = User::find($id);
-//             if (!$user) {
-//                 return response()->json(['message' => 'Staff not found'], 404);
-//             }
+    /**
+     * Update an existing user
+     * PUT /api/users/{id}
+     */
+    public function update(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = User::find($id);
+            
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User not found'
+                ], 404);
+            }
 
-//             // Find the associated staff record
-//             $staff = Staff::where('userId', $id)->first();
-//             if (!$staff) {
-//                 return response()->json(['message' => 'Associated staff record not found'], 404);
-//             }
+            // Validate input
+            $validatedData = $request->validate([
+                'firstName'   => 'sometimes|required|string|max:255',
+                'lastName'    => 'nullable|string|max:255',
+                'otherNames'  => 'nullable|string|max:255',
+                'phoneNumber' => 'nullable|string|max:20',
+                'email'       => [
+                    'sometimes',
+                    'required',
+                    'email',
+                    'max:255',
+                    Rule::unique('users', 'email')->ignore($id)
+                ],
+                'password'    => 'nullable|string|min:6',
+                'role'        => 'sometimes|required|integer|in:1,2,3,4',
+                'status'      => 'sometimes|required|string|in:active,inactive,suspended,pending',
+            ]);
 
-//             // Delete both records
-//             $staff->delete();
-//             $user->delete();
+            // Update user in transaction
+            $user = DB::transaction(function () use ($user, $validatedData) {
+                $updateData = [
+                    'firstName'   => $validatedData['firstName'] ?? $user->firstName,
+                    'lastName'    => $validatedData['lastName'] ?? $user->lastName,
+                    'otherNames'  => $validatedData['otherNames'] ?? $user->otherNames,
+                    'phoneNumber' => $validatedData['phoneNumber'] ?? $user->phoneNumber,
+                    'email'       => $validatedData['email'] ?? $user->email,
+                    'role'        => $validatedData['role'] ?? $user->role,
+                    'status'      => $validatedData['status'] ?? $user->status,
+                ];
 
-//             return response()->json(['message' => 'Staff deleted successfully']);
-//         }, 5);
-//     }
+                // Only update password if provided
+                if (isset($validatedData['password'])) {
+                    $updateData['password'] = Hash::make($validatedData['password']);
+                }
+
+                $user->update($updateData);
+                return $user;
+            });
+
+            Log::info('User updated:', ['email' => $user->email, 'id' => $user->id]);
+
+            // Load role relationship
+            $user->load('user_role');
+
+            return response()->json([
+                'message' => 'User updated successfully',
+                'data'    => $user
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors'  => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error updating user: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to update user'
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a user
+     * DELETE /api/users/{id}
+     */
+    public function destroy($id): JsonResponse
+    {
+        try {
+            $user = User::find($id);
+            
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User not found'
+                ], 404);
+            }
+
+            DB::transaction(function () use ($user) {
+                $user->delete();
+            });
+
+            Log::info('User deleted:', ['id' => $id]);
+
+            return response()->json([
+                'message' => 'User deleted successfully'
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error deleting user: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to delete user'
+            ], 500);
+        }
+    }
+
+    /**
+     * Update user status only
+     * PATCH /api/users/{id}/status
+     */
+    public function updateStatus(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = User::find($id);
+            
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User not found'
+                ], 404);
+            }
+
+            $validatedData = $request->validate([
+                'status' => 'required|string|in:active,inactive,suspended,pending',
+            ]);
+
+            $user->update([
+                'status' => $validatedData['status']
+            ]);
+
+            Log::info('User status updated:', ['id' => $id, 'status' => $validatedData['status']]);
+
+            return response()->json([
+                'message' => 'User status updated successfully',
+                'data'    => $user
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors'  => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error updating user status: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to update user status'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get properties for a specific user (agents/owners)
+     * GET /api/users/{id}/properties
+     */
+    public function getUserProperties($id): JsonResponse
+    {
+        try {
+            $user = User::find($id);
+            
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User not found'
+                ], 404);
+            }
+
+            // Get properties based on user role
+            // Adjust the relationship name based on your User model
+            $properties = $user->properties()
+                ->with(['currency', 'images'])
+                ->get();
+
+            return response()->json($properties, 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error fetching user properties: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to fetch properties'
+            ], 500);
+        }
+    }
+
+    /**
+     * Alias for getUserProperties (for route convenience)
+     * GET /api/users/{id}/properties
+     */
+    public function properties($id): JsonResponse
+    {
+        return $this->getUserProperties($id);
+    }
 }
