@@ -4,25 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Property;
+use App\Models\PropertyView;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\Message;
 
 class DashboardController extends Controller
 {
-    public function stats(Request $request)
-    {
-        $user = $request->user();
-        $role = (int) $user->role;
+    // public function stats(Request $request)
+    // {
+    //     $user = $request->user();
+    //     $role = (int) $user->role;
 
-        $stats = match (true) {
-            $role === 3 => $this->adminStats(),           // ADMIN
-            $role === 2 => $this->agentStats($user),      // AGENT
-            $role === 4 => $this->ownerStats($user),      // OWNER
-            default     => $this->userStats($user),       // USER (1)
-        };
+    //     $stats = match (true) {
+    //         $role === 3 => $this->adminStats(),           // ADMIN
+    //         $role === 2 => $this->agentStats($user),      // AGENT
+    //         $role === 4 => $this->ownerStats($user),      // OWNER
+    //         default     => $this->userStats($user),       // USER (1)
+    //     };
 
-        return response()->json(['data' => $stats]);
-    }
+    //     return response()->json(['data' => $stats]);
+    // }
 
     // ── ADMIN ────────────────────────────────────────────────────────────────
 
@@ -31,7 +33,7 @@ class DashboardController extends Controller
         return [
             'totalUsers'       => User::whereNull('deleted_at')->count(),
             'totalProperties'  => Property::whereNull('deleted_at')->count(),
-            'activeListings'   => Property::whereNull('deleted_at')->where('status', 'active')->count(),
+            'activeListings'   => Property::whereNull('deleted_at')->where('status', 'active')->where('isFeatured', 1)->count(),
             'pendingApprovals' => Property::whereNull('deleted_at')->where('status', 'pending')->count(),
             'propertyViews'    => Property::whereNull('deleted_at')->sum('views') ?? 0,
             'totalInquiries'   => $this->inquiryCount(),
@@ -124,5 +126,83 @@ class DashboardController extends Controller
         return Property::whereNull('deleted_at')
             ->where('status', 'sold')
             ->sum('price') ?? 0;
+    }
+
+    public function stats()
+    {
+        $user = auth()->user();
+        $role = $user->role;
+
+        if ($role === 3) { // Admin
+            return response()->json([
+                'data' => [
+                    'totalUsers' => User::count(),
+                    'totalProperties' => Property::count(),
+                    'activeListings' => Property::where('isAvailable', true)->count(),
+                    'featuredListings' => Property::where('isFeatured', true)
+                        ->whereNotNull('featuredUntil')
+                        ->where('featuredUntil', '>=', now())
+                        ->count(),
+                    'pendingApprovals' => Property::where('status', 'pending')->count(),
+                    'propertyViews' => PropertyView::count(), // or Property::sum('views')
+                    'totalInquiries' => Message::count(),
+                    'revenue' => $this->calculateRevenue(),
+                ]
+            ]);
+        } elseif ($role === 2 || $role === 4) { // Agent or Owner
+            $propertyIds = Property::where('addedBy', $user->id)->pluck('propertyId');
+            
+            return response()->json([
+                'data' => [
+                    'totalProperties' => Property::where('addedBy', $user->id)->count(),
+                    'activeListings' => Property::where('addedBy', $user->id)
+                        ->where('isAvailable', true)
+                        ->count(),
+                    'featuredListings' => Property::where('addedBy', $user->id)
+                        ->where('isFeatured', true)
+                        ->whereNotNull('featuredUntil')
+                        ->where('featuredUntil', '>=', now())
+                        ->count(),
+                    'propertyViews' => PropertyView::whereIn('property_id', $propertyIds)->count(),
+                    'totalInquiries' => Message::where('recipientId', $user->id)->count(),
+                    'revenue' => $this->calculateUserRevenue($user->id),
+                ]
+            ]);
+        } else { // User (role = 1)
+            return response()->json([
+                'data' => [
+                    'savedProperties' => Favorite::where('userId', $user->id)->count(),
+                    'propertyViews' => PropertyView::where('user_id', $user->id)->count(),
+                    'inquiriesSent' => Message::where('senderId', $user->id)->count(),
+                ]
+            ]);
+        }
+    }
+
+    protected function calculateRevenue()
+    {
+        // Calculate revenue from promotion packages
+        $promotionRevenue = Property::whereNotNull('promotionPackageId')
+            ->with('promotionPackage')
+            ->get()
+            ->sum(function($property) {
+                return $property->promotionPackage ? $property->promotionPackage->price : 0;
+            });
+
+        return $promotionRevenue;
+    }
+
+    protected function calculateUserRevenue($userId)
+    {
+        // Calculate revenue from user's featured properties
+        $promotionRevenue = Property::where('addedBy', $userId)
+            ->whereNotNull('promotionPackageId')
+            ->with('promotionPackage')
+            ->get()
+            ->sum(function($property) {
+                return $property->promotionPackage ? $property->promotionPackage->price : 0;
+            });
+
+        return $promotionRevenue;
     }
 }

@@ -243,7 +243,6 @@ public function store(Request $request)
             'images',
             'currency',
             'property_type',
-            // If you have these relationships defined, include them too
             'owner',
             'inquiries'
         ])
@@ -253,26 +252,14 @@ public function store(Request $request)
         return response()->json(['message' => 'Property not found'], 404);
     }
 
-    // Option 1: If you have a view_count column on properties table (recommended)
     $viewsCount = (int) $property->views ?? 0;
     $isFeatured = (int) $property->isFeatured ?? 0;
+    $favoritesCount = $property->favoritedBy()->count();
 
-  
-    // Favorites count – assuming many-to-many relationship named 'favoritedBy' or 'favorites'
-    $favoritesCount = $property->favoritedBy()->count();   // or ->favorites()->count();
+    // ✅ Fix: Check if user is authenticated before accessing user data
+    $loggedInUser = auth()->check() ? auth()->user()->id : null;
+    $isOwner = $loggedInUser !== null && $loggedInUser === $property->addedBy;
 
-    // Check if current user is the owner
-    $loggedInUser = auth()->user()->id;
-    // return $property->addedBy;
-    $isOwner = $loggedInUser === $property->addedBy;
-
-    // You can either:
-    // A) Add attributes directly to the model instance (cleanest for frontend)
-    // $property->viewsCount     = $viewsCount;
-    // $property->favoritesCount = $favoritesCount;
-    // $property->isOwner        = $isOwner;
-
-    // B) Or return a custom array / resource (more control over what’s sent)
     return response()->json([
         'property' => $property,
         'viewsCount' => $viewsCount,
@@ -280,11 +267,7 @@ public function store(Request $request)
         'isFeatured' => $isFeatured,
         'isOwner' => $isOwner,
     ]);
-
-    // Most common & clean approach: just augment the model
-    // return response()->json($property);
 }
-
 
     public function update(Request $request, $slug)
     {

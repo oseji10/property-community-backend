@@ -106,7 +106,10 @@ public function favoritedBy()
 }
 
 
-
+public function propertyViews()
+{
+    return $this->hasMany(PropertyView::class, 'property_id', 'propertyId');
+}
 
     /**
      * Indicates if the model should use snake_case for attributes.
