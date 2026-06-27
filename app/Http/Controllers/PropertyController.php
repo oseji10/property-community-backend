@@ -145,7 +145,7 @@ public function store(Request $request)
         // 'images'              => 'nullable',
         // 'images.*'            => 'image|mimes:jpeg,png,jpg,gif,svg,avif|max:5120',
         'images'   => 'nullable|array',
-    'images.*' => 'file|mimes:jpeg,png,jpg,gif,svg,avif|max:5120',
+    'images.*' => 'file|mimes:jpeg,png,jpg,gif,svg,avif|max:1024',
     ]);
 
     $data['addedBy'] = auth()->id();
