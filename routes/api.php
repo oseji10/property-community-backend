@@ -104,6 +104,15 @@ Route::middleware(['auth.jwt'])->group(function () {
     // IMPORTANT: Specific property routes MUST come BEFORE general {slug} route
     Route::get('/properties/my', [PropertyController::class, 'myProperties']);
     
+    Route::get('/my-properties/user', [PropertyController::class, 'userProperties']);
+    Route::get('/my-properties/user/stats', [PropertyController::class, 'userStats']);
+    Route::get('/my-properties/my', [PropertyController::class, 'myProperties']);
+    Route::post('/my-properties', [PropertyController::class, 'store']);
+    Route::put('/my-properties/{slug}', [PropertyController::class, 'update']);
+    Route::delete('/my-properties/{slug}', [PropertyController::class, 'destroy']);
+    Route::delete('/my-properties/{slug}/images/{imageId}', [PropertyController::class, 'deleteImage']);
+    Route::patch('/my-properties/{slug}/status', [PropertyController::class, 'updateStatus']);
+
     Route::post('/properties', [PropertyController::class, 'store']);
     Route::post('/properties/{slug}/rate', [PropertyController::class, 'rate']);
     Route::get('/properties/{slug}', [PropertyController::class, 'show']);

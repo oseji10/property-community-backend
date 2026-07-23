@@ -742,4 +742,101 @@ public function store(Request $request)
  
         return response()->json(['message' => 'Property deleted successfully']);
     }
+
+
+
+    /**
+ * Get properties for the currently logged-in user (non-admin)
+ * GET /api/properties/user
+ */
+public function userProperties(Request $request)
+{
+    $user = auth()->user();
+    
+    if (!$user) {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
+
+    // Regular users can only see their own properties
+    $query = Property::where('addedBy', $user->id)
+        ->with(['images', 'currency', 'property_type'])
+        ->orderBy('created_at', 'desc');
+
+    // Apply filters
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('listingType')) {
+        $query->where('listingType', $request->listingType);
+    }
+
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('propertyTitle', 'like', "%{$search}%")
+              ->orWhere('city', 'like', "%{$search}%")
+              ->orWhere('state', 'like', "%{$search}%");
+        });
+    }
+
+    if ($request->filled('isAvailable')) {
+        $query->where('isAvailable', $request->boolean('isAvailable'));
+    }
+
+    if ($request->filled('isFeatured')) {
+        $query->where('isFeatured', $request->boolean('isFeatured'));
+    }
+
+    $properties = $query->paginate($request->get('per_page', 20));
+
+    // Get stats for the user
+    $stats = [
+        'total_properties' => Property::where('addedBy', $user->id)->count(),
+        'active_listings' => Property::where('addedBy', $user->id)->where('isAvailable', true)->count(),
+        'pending_approvals' => Property::where('addedBy', $user->id)->where('status', 'pending')->count(),
+        'properties_for_sale' => Property::where('addedBy', $user->id)->where('listingType', 'sale')->where('isAvailable', true)->count(),
+        'properties_for_rent' => Property::where('addedBy', $user->id)->where('listingType', 'rent')->where('isAvailable', true)->count(),
+        'total_views' => Property::where('addedBy', $user->id)->sum('views'),
+    ];
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $properties,
+        'stats' => $stats,
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->firstName . ' ' . $user->lastName,
+            'email' => $user->email,
+        ]
+    ]);
+}
+
+/**
+ * Get statistics for the current user's properties
+ * GET /api/properties/user/stats
+ */
+public function userStats()
+{
+    $user = auth()->user();
+    
+    if (!$user) {
+        return response()->json(['message' => 'Unauthorized'], 401);
+    }
+
+    $stats = [
+        'total_properties' => Property::where('addedBy', $user->id)->count(),
+        'active_listings' => Property::where('addedBy', $user->id)->where('isAvailable', true)->count(),
+        'pending_approvals' => Property::where('addedBy', $user->id)->where('status', 'pending')->count(),
+        'properties_for_sale' => Property::where('addedBy', $user->id)->where('listingType', 'sale')->where('isAvailable', true)->count(),
+        'properties_for_rent' => Property::where('addedBy', $user->id)->where('listingType', 'rent')->where('isAvailable', true)->count(),
+        'total_views' => Property::where('addedBy', $user->id)->sum('views'),
+        'featured_properties' => Property::where('addedBy', $user->id)->where('isFeatured', true)->count(),
+    ];
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $stats,
+    ]);
+}
 }
