@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Property;
+use App\Models\Favorite;
 use App\Models\PropertyView;
 use App\Models\User;
 use Illuminate\Http\Request;
