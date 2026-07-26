@@ -40,7 +40,9 @@ class Property extends Model
         'size',
         'views',
         'isFeatured',
-        'featuredUntil'
+        'featuredUntil',
+        'average_rating',
+        'total_ratings',
     ];
 
 

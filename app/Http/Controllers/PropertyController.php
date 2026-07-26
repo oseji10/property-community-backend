@@ -40,6 +40,9 @@ public function index(Request $request)
             $type = 'sale';
         } elseif ($type === 'rent') {
             $type = 'rent';
+        }
+         elseif ($type === 'lease') {
+            $type = 'lease';
         } else {
             $type = null;
         }
@@ -132,7 +135,7 @@ public function store(Request $request)
         'city'                => 'nullable|string',
         'state'               => 'nullable|string',
         'price'               => 'required|numeric|min:0',
-        'listingType'         => 'required|in:rent,sale',
+        'listingType'         => 'required|in:rent,sale,lease',
         'bedrooms'            => 'nullable|integer|min:0',
         'bathrooms'           => 'nullable|integer|min:0',
         'garage'              => 'nullable|string',

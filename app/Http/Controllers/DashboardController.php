@@ -165,7 +165,7 @@ class DashboardController extends Controller
                         ->where('featuredUntil', '>=', now())
                         ->count(),
                     'propertyViews' => PropertyView::whereIn('property_id', $propertyIds)->count(),
-                    'totalInquiries' => Message::where('recipientId', $user->id)->count(),
+                    'totalInquiries' => Message::where('receiverId', $user->id)->count(),
                     'revenue' => $this->calculateUserRevenue($user->id),
                 ]
             ]);
