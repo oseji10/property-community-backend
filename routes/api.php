@@ -13,7 +13,8 @@ use App\Http\Controllers\RolesController;
 use App\Http\Controllers\OtpController;
 use App\Http\Controllers\FlutterwaveWebhookController;
 use App\Http\Controllers\PaystackWebhookController;
-
+use App\Http\Controllers\PromotionPackageController;
+use App\Http\Controllers\ProfileController;
 /*
 |--------------------------------------------------------------------------
 | API Routes - FIXED VERSION
@@ -89,7 +90,20 @@ Route::middleware(['auth.jwt'])->group(function () {
         ]);
     });
 
-    
+    Route::get('/promotion-packages', [PromotionPackageController::class, 'index']);
+    Route::post('/promotion-packages', [PromotionPackageController::class, 'store']);
+    Route::get('/promotion-packages/{id}', [PromotionPackageController::class, 'show']);
+    Route::put('/promotion-packages/{id}', [PromotionPackageController::class, 'update']);
+    Route::patch('/promotion-packages/{id}/toggle', [PromotionPackageController::class, 'toggleActive']);
+    Route::delete('/promotion-packages/{id}', [PromotionPackageController::class, 'destroy']);
+
+    Route::get('/user/profile', [ProfileController::class, 'show']);
+    Route::put('/user/profile', [ProfileController::class, 'update']);
+    Route::post('/user/profile/avatar', [ProfileController::class, 'uploadAvatar']);
+    Route::get('/user/profile/stats', [ProfileController::class, 'stats']);
+    Route::post('/user/verify-email/resend', [ProfileController::class, 'resendVerification']);
+    Route::put('/user/change-password', [ProfileController::class, 'changePassword']);
+
     // ========================================
     // DASHBOARD STATS
     // ========================================

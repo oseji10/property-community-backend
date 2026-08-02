@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Property;
 use App\Models\AdmissionSettings;
+use App\Models\PromotionPackages;
 use App\Models\Applications;
 use App\Models\Programmes;
 use App\Models\AcademicSession;
