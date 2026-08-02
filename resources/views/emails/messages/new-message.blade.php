@@ -44,6 +44,7 @@
         .message-box p {
             margin: 0;
             color: #1e293b;
+            white-space: pre-wrap;
         }
         .message-meta {
             display: flex;
@@ -131,36 +132,42 @@
 
         <!-- Content -->
         <div class="content">
-            <p>Hello <strong>{{ $recipient->firstName }} {{ $recipient->lastName }}</strong>,</p>
+            <p>Hello <strong>{{ $recipient->firstName ?? 'User' }} {{ $recipient->lastName ?? '' }}</strong>,</p>
 
-            <p>You have received a new message from <strong>{{ $sender->firstName }} {{ $sender->lastName }}</strong> regarding your property listing.</p>
+            <p>You have received a new message from <strong>{{ $sender->firstName ?? 'User' }} {{ $sender->lastName ?? '' }}</strong>.</p>
 
             <!-- Message Content -->
             <div class="message-box">
-                <p style="white-space: pre-wrap;">{{ $message->content }}</p>
+                <p>{{ $message->content ?? 'No content available' }}</p>
             </div>
 
             <!-- Message Meta Information -->
             <div class="message-meta">
                 <div>
                     <span class="label">From:</span>
-                    <span>{{ $sender->firstName }} {{ $sender->lastName }}</span>
-                    @if($sender->email)
+                    <span>{{ $sender->firstName ?? 'User' }} {{ $sender->lastName ?? '' }}</span>
+                    @if($sender && $sender->email)
                         <br><span style="font-size: 12px; color: #64748b;">{{ $sender->email }}</span>
                     @endif
                 </div>
                 <div>
                     <span class="label">Sent:</span>
-                    <span>{{ $message->created_at->format('F j, Y \a\t g:i A') }}</span>
+                    <span>{{ isset($message->created_at) ? $message->created_at->format('F j, Y \a\t g:i A') : 'N/A' }}</span>
                 </div>
             </div>
 
             <!-- Property Information (if available) -->
             @if($message->property)
                 <div class="property-info">
-                    <div><span class="label">Property:</span> <span class="value">{{ $message->property->propertyTitle }}</span></div>
-                    @if($message->property->address)
-                        <div><span class="label">Location:</span> <span class="value">{{ $message->property->address }}, {{ $message->property->city }}, {{ $message->property->state }}</span></div>
+                    <div>
+                        <span class="label">Property:</span> 
+                        <span class="value">{{ $message->property->propertyTitle ?? 'N/A' }}</span>
+                    </div>
+                    @if(isset($message->property->address) && isset($message->property->city))
+                        <div>
+                            <span class="label">Location:</span> 
+                            <span class="value">{{ $message->property->address ?? '' }}, {{ $message->property->city ?? '' }}, {{ $message->property->state ?? '' }}</span>
+                        </div>
                     @endif
                 </div>
             @endif

@@ -13,30 +13,10 @@ class NewMessageReceived extends Mailable
 {
     use Queueable, SerializesModels;
 
-    /**
-     * The message instance.
-     *
-     * @var \App\Models\Message
-     */
     public $message;
-
-    /**
-     * The recipient user.
-     *
-     * @var \App\Models\User
-     */
     public $recipient;
-
-    /**
-     * The sender user.
-     *
-     * @var \App\Models\User
-     */
     public $sender;
 
-    /**
-     * Create a new message instance.
-     */
     public function __construct(Message $message)
     {
         $this->message = $message;
@@ -44,19 +24,13 @@ class NewMessageReceived extends Mailable
         $this->sender = $message->sender;
     }
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'New Message from ' . $this->sender->firstName . ' ' . $this->sender->lastName,
+            subject: 'New Message from ' . ($this->sender->firstName ?? 'User') . ' ' . ($this->sender->lastName ?? ''),
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
@@ -64,11 +38,6 @@ class NewMessageReceived extends Mailable
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
         return [];
