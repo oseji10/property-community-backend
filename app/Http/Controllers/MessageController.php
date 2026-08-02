@@ -37,7 +37,7 @@ class MessageController extends Controller
     $receiver = $message->receiver;
     if ($receiver->email_verified_at) { // only if email is verified
         \Illuminate\Support\Facades\Mail::to($receiver->email)
-            ->queue(new \App\Mail\NewMessageReceived($message));
+            ->send(new \App\Mail\NewMessageReceived($message));
     }
 
         return response()->json([
