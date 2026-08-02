@@ -1,3 +1,4 @@
+// app/Mail/NewMessageReceived.php
 <?php
 
 namespace App\Mail;
@@ -27,15 +28,14 @@ class NewMessageReceived extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'New Message from ' . ($this->sender->firstName ?? 'User') . ' ' . ($this->sender->lastName ?? ''),
+            subject: 'New Message from ' . ($this->sender->firstName ?? 'User'),
         );
     }
 
-    public function content(): Content
+    public function build()
     {
-        return new Content(
-            view: 'emails.messages.new-message',
-        );
+        return $this->subject('New Message from ' . ($this->sender->firstName ?? 'User'))
+                    ->view('emails.messages.new-message');
     }
 
     public function attachments(): array
