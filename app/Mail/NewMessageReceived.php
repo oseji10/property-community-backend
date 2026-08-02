@@ -1,4 +1,3 @@
-// app/Mail/NewMessageReceived.php
 <?php
 
 namespace App\Mail;
