@@ -23,7 +23,7 @@ class ProfileController extends Controller
             'data' => $user,
         ]);
     }
-
+ 
     /**
      * Update user profile
      */
