@@ -20,31 +20,37 @@ class User extends Authenticatable implements JWTSubject
 
     public $table = 'users';
     
-    protected $fillable = [
-        'phoneNumber',
-        'email',
-        'role',
-        'firstName',
-        'lastName',
-        'otherNames',
-        'password', 
-        'status',
-        'otp_code',
-        'otp_expires_at',
-        'email_verified_at',
-        'currentPlan',
-        // Additional fields for profile
-        'address',
-        'city',
-        'state',
-        'country',
-        'avatar',
-        'bio',
-        'company',
-        'website',
-    ];
-    
-    protected $dates = ['deleted_at'];
+   protected $fillable = [
+    'phoneNumber',
+    'email',
+    'role',
+    'firstName',
+    'lastName',
+    'otherNames',
+    'password',
+    'status',
+    'otp_code',
+    'otp_expires_at',
+    'password_reset_otp',
+    'password_reset_otp_expires_at',
+    'email_verified_at',
+    'currentPlan',
+    'address',
+    'city',
+    'state',
+    'country',
+    'avatar',
+    'bio',
+    'company',
+    'website',
+];
+
+protected $casts = [
+    'email_verified_at' => 'datetime',
+    'otp_expires_at' => 'datetime',
+    'password_reset_otp_expires_at' => 'datetime',
+    'password' => 'hashed',
+];
     protected $hidden = ['password'];
 
     /**
@@ -52,11 +58,11 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var array<string, string>
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'otp_expires_at' => 'datetime',
-        'password' => 'hashed',
-    ];
+    // protected $casts = [
+    //     'email_verified_at' => 'datetime',
+    //     'otp_expires_at' => 'datetime',
+    //     'password' => 'hashed',
+    // ];
 
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.

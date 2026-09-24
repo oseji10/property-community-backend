@@ -32,6 +32,12 @@ Route::post('/auth/signin', [AuthController::class, 'signin']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 Route::post('/refresh', [AuthController::class, 'refresh']);
 
+
+
+Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+
+
 Route::post('/auth/resend-otp', [OtpController::class, 'resendOtp']);
 Route::post('/auth/verify-otp', [OtpController::class, 'verifyOtp']);
 Route::post('/auth/setup-password', [AuthController::class, 'setupPassword']);

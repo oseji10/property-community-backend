@@ -584,4 +584,192 @@ private function sendWelcomeEmail(User $user)
     // }
 
     
+    /**
+ * Send password reset OTP
+ *
+ * POST /api/auth/forgot-password
+ */
+public function forgotPassword(Request $request)
+{
+    try {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $email = strtolower(trim($request->email));
+
+        $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+
+        /*
+         * Always return the same response whether or not
+         * the email exists. This prevents account enumeration.
+         */
+        if (!$user) {
+            return response()->json([
+                'status' => true,
+                'message' => 'If an account exists with that email, a password reset code has been sent.',
+            ], 200);
+        }
+
+        // Generate a secure 6-digit OTP
+        $otp = str_pad(
+            (string) random_int(0, 999999),
+            6,
+            '0',
+            STR_PAD_LEFT
+        );
+
+        // OTP expires in 10 minutes
+        $user->password_reset_otp = $otp;
+        $user->password_reset_otp_expires_at = now()->addMinutes(10);
+        $user->save();
+
+        // Send OTP email
+        try {
+            Mail::to($user->email)->send(
+                new OtpEmail(
+                    $user->firstName,
+                    $user->lastName,
+                    $otp
+                )
+            );
+
+            Log::info('Password reset OTP sent', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+            ]);
+        } catch (\Exception $e) {
+            // Clear OTP if email failed
+            $user->password_reset_otp = null;
+            $user->password_reset_otp_expires_at = null;
+            $user->save();
+
+            Log::error('Password reset OTP email failed', [
+                'email' => $user->email,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to send the password reset email. Please try again later.',
+            ], 500);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'If an account exists with that email, a password reset code has been sent.',
+        ], 200);
+
+    } catch (ValidationException $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Validation failed.',
+            'errors' => $e->errors(),
+        ], 422);
+
+    } catch (\Exception $e) {
+        Log::error('Forgot password failed', [
+            'error' => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Unable to process your request. Please try again later.',
+        ], 500);
+    }
+}
+
+
+/**
+ * Reset password using OTP
+ *
+ * POST /api/auth/reset-password
+ */
+public function resetPassword(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string|size:6',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $email = strtolower(trim($validated['email']));
+
+        $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid or expired reset code.',
+            ], 422);
+        }
+
+        // Check OTP
+        if (
+            !$user->password_reset_otp ||
+            !hash_equals(
+                (string) $user->password_reset_otp,
+                (string) $validated['otp']
+            )
+        ) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid or expired reset code.',
+            ], 422);
+        }
+
+        // Check expiration
+        if (
+            !$user->password_reset_otp_expires_at ||
+            now()->greaterThan($user->password_reset_otp_expires_at)
+        ) {
+            $user->password_reset_otp = null;
+            $user->password_reset_otp_expires_at = null;
+            $user->save();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'This reset code has expired. Please request a new code.',
+            ], 422);
+        }
+
+        // Update password
+        $user->password = Hash::make($validated['password']);
+
+        // Clear reset OTP
+        $user->password_reset_otp = null;
+        $user->password_reset_otp_expires_at = null;
+
+        $user->save();
+
+        Log::info('Password reset successfully', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Your password has been reset successfully.',
+        ], 200);
+
+    } catch (ValidationException $e) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Validation failed.',
+            'errors' => $e->errors(),
+        ], 422);
+
+    } catch (\Exception $e) {
+        Log::error('Password reset failed', [
+            'error' => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'status' => false,
+            'message' => 'Unable to reset your password. Please try again later.',
+        ], 500);
+    }
+}
+
 }
